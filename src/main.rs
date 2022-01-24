@@ -14,36 +14,44 @@ enum CharMatch {
 
 enum GuessResult {
 	InvalidWord,
-	CheckStatus,
 	WrongGuess,
 	Correct,
 }
 
+const MUTATE_PROB: f64 = 0.2;
+
 struct GameParameters {
 	word_size: usize,
 	tries: i32,
-	word_list: Vec<String>,
+	guess_wordlist: Vec<String>,
 	target_word: String,
 	time_limit: Duration,
 }
 
-fn setup_game(rng: &mut impl Rng) -> Result<GameParameters> {
-
-	let tries = 15;
-	let word_size = 6;
-
-	let time_limit = Duration::from_secs(600);
-
-	let f = File::open("/home/jack/Downloads/words.txt")?;
+fn load_wordlist(filename: &str, word_size: usize) -> Result<Vec<String>> {
+	let f = File::open(filename)?;
 	let file = BufReader::new(f);
 	let word_list = file.lines()
 		.filter_map(|x| Some(x.unwrap()))
 		.filter(|x| x.len() == word_size)
 		.collect::<Vec<String>>();
 
-	let target_word = word_list.iter().choose(rng).unwrap().to_string();
+	Ok(word_list)
+}
 
-	Ok(GameParameters{tries,word_size,time_limit, word_list, target_word})
+
+fn setup_game(rng: &mut impl Rng) -> Result<GameParameters> {
+	let tries = 30;
+	let word_size = 5;
+
+	let time_limit = Duration::from_secs(60 * 60);
+
+	let guess_wordlist = load_wordlist("/home/jack/Downloads/words.txt", word_size)?;
+	let answer_wordlist = load_wordlist("/home/jack/Documents/jordle/words/answers.txt", word_size)?;
+
+	let target_word = answer_wordlist.iter().choose(rng).unwrap().to_string();
+
+	Ok(GameParameters{tries,word_size,time_limit, guess_wordlist, target_word})
 }
 
 fn main() -> Result<()> {
@@ -51,19 +59,19 @@ fn main() -> Result<()> {
 
 	let params = setup_game(&mut rng)?;
 
-	// println!("Shhhhh ;) : {}",target_word);
+	// println!("Shhhhh ;) : {}", &params.target_word);
 	println!("You have {} tries and {} seconds to guess a {} letter my word!",
 			 params.tries, params.time_limit.as_secs(), params.word_size);
 
 	let start_time = Instant::now();
 	let mut try_number = 0;
 	while try_number < params.tries {
-		let guess_result = guess_word(&params.word_list, &params.target_word)?;
+		let guess_result = guess_word(&params.guess_wordlist, &params.target_word, &mut rng)?;
 		match guess_result {
 			GuessResult::Correct => {break;}
 			GuessResult::CheckStatus => {}
 			GuessResult::WrongGuess => {try_number += 1}
-			GuessResult::InvalidWord => {try_number += 1}
+			GuessResult::InvalidWord => {}
 		}
 
 		let current_dur = start_time.elapsed();
@@ -85,29 +93,51 @@ fn main() -> Result<()> {
 	Ok(())
 }
 
-fn guess_word(words: &Vec<String>, target_word: &String) -> Result<GuessResult> {
+fn guess_word(words: &Vec<String>, target_word: &String, rng: &mut impl Rng) -> Result<GuessResult> {
 		let mut raw_input = String::new();
 		stdin().read_line(&mut raw_input)?;
 		let guessed_word = raw_input.trim().to_string();
 
-		if !words.contains(&guessed_word) {
-			println!("Invalid word/length, try again.");
+		if target_word.len() != guessed_word.len() {
+			println!("Invalid length, try again.");
 			return Ok(GuessResult::InvalidWord);
+		} else if !words.contains(&guessed_word) {
+			println!("Invalid word, try again.");
+			return Ok(GuessResult::InvalidWord);
+		} else if *target_word == guessed_word {
+			println!("You guessed it!");
+			return Ok(GuessResult::Correct);
 		}
 
-		let matches = match_word(&target_word, &guessed_word);
+		let matches: Vec<CharMatch> = match_word(&target_word, &guessed_word).into_iter().map(|x| mutate_match(x, rng)).collect();
 
 		guessed_word.chars()
 			.zip(matches.iter())
 			.for_each(|(t,m)| print_char(t,m));
-		println!();
+		print!(" - ");
 
-		if matches.iter().fold(true, |prev, x| match x {CharMatch::Exact => true, _ => false} && prev) {
-			println!("You guessed it!");
-			Ok(GuessResult::Correct)
-		} else {
-			Ok(GuessResult::WrongGuess)
+
+
+	Ok(GuessResult::WrongGuess)
+}
+
+fn mutate_match(cmatch: CharMatch, rng: &mut impl Rng) -> CharMatch {
+	let prob = match cmatch {
+		CharMatch::Misplaced => MUTATE_PROB * 2.0,
+		_ => MUTATE_PROB,
+	};
+
+	let should_mutate = rng.gen_bool(prob);
+
+	if should_mutate {
+		match cmatch {
+			CharMatch::Exact => CharMatch::Misplaced,
+			CharMatch::NotFound => CharMatch::Misplaced,
+			CharMatch::Misplaced => {if rng.gen_bool(0.5) {CharMatch::Exact} else {CharMatch::NotFound}},
 		}
+	} else {
+		cmatch
+	}
 }
 
 fn print_char(c: char, cmatch: &CharMatch) {
