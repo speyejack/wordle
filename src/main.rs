@@ -87,7 +87,7 @@ fn main() -> Result<()> {
             GuessResult::Correct => {
                 break;
             }
-            GuessResult::CheckStatus => {}
+
             GuessResult::WrongGuess => try_number += 1,
             GuessResult::InvalidWord => {}
         }
