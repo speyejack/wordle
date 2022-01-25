@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs::File,
     io::stdin,
     io::{BufRead, BufReader},
@@ -18,8 +19,8 @@ enum CharMatch {
 }
 
 enum InvalidationReason {
-	WrongLength,
-	UnknownWord,
+    WrongLength,
+    UnknownWord,
 }
 enum GuessResult {
     InvalidWord(InvalidationReason),
@@ -32,19 +33,19 @@ const MUTATE_PROB: f64 = 0.2;
 struct GameParameters {
     word_size: usize,
     tries: i32,
-    guess_wordlist: Vec<String>,
+    guess_wordlist: HashSet<String>,
     target_word: String,
     time_limit: Duration,
 }
 
-fn load_wordlist(filename: &str, word_size: usize) -> Result<Vec<String>> {
+fn load_wordlist(filename: &str, word_size: usize) -> Result<HashSet<String>> {
     let f = File::open(filename)?;
     let file = BufReader::new(f);
     let word_list = file
         .lines()
-        .filter_map(|x| Some(x.unwrap()))
+        .map(|x| x.unwrap())
         .filter(|x| x.len() == word_size)
-        .collect::<Vec<String>>();
+        .collect::<HashSet<String>>();
 
     Ok(word_list)
 }
@@ -55,11 +56,16 @@ fn setup_game(rng: &mut impl Rng) -> Result<GameParameters> {
 
     let time_limit = Duration::from_secs(60 * 60);
 
-    let guess_wordlist = load_wordlist("/home/jack/Downloads/words.txt", word_size)?;
     let answer_wordlist =
         load_wordlist("/home/jack/Documents/jordle/words/answers.txt", word_size)?;
 
     let target_word = answer_wordlist.iter().choose(rng).unwrap().to_string();
+
+    let base_guess_wordlist = load_wordlist("/home/jack/Downloads/words.txt", word_size)?;
+    let guess_wordlist = base_guess_wordlist
+        .into_iter()
+        .chain(answer_wordlist.into_iter())
+        .collect::<HashSet<String>>();
 
     Ok(GameParameters {
         tries,
@@ -87,7 +93,13 @@ fn main() -> Result<()> {
     let mut try_number = 0;
 
     while try_number < params.tries {
-        let guess_result = guess_word(&params.guess_wordlist, &params.target_word, &mut rng, (params.word_size, params.word_size))?;
+        let guess_result = guess_word(
+            &params.guess_wordlist,
+            &params.target_word,
+            &mut rng,
+            (params.word_size, params.word_size),
+        )?;
+
         match guess_result {
             GuessResult::Correct => {
                 break;
@@ -120,17 +132,16 @@ fn main() -> Result<()> {
 }
 
 fn guess_word(
-    words: &Vec<String>,
-    target_word: &String,
+    words: &HashSet<String>,
+    target_word: &str,
     rng: &mut impl Rng,
-	range: (usize, usize)
+    range: (usize, usize),
 ) -> Result<GuessResult> {
     let mut raw_input = String::new();
     stdin().read_line(&mut raw_input)?;
     let guessed_word = raw_input.trim().to_string();
 
-	if guessed_word.len() < range.0 ||
-		guessed_word.len() > range.1 {
+    if guessed_word.len() < range.0 || guessed_word.len() > range.1 {
         println!("Invalid length, try again.");
         return Ok(GuessResult::InvalidWord(InvalidationReason::WrongLength));
     } else if !words.contains(&guessed_word) {
@@ -141,7 +152,7 @@ fn guess_word(
         return Ok(GuessResult::Correct);
     }
 
-    let matches: Vec<CharMatch> = match_word(&target_word, &guessed_word)
+    let matches: Vec<CharMatch> = match_word(target_word, &guessed_word)
         .into_iter()
         .map(|x| mutate_match(x, rng))
         .collect();
