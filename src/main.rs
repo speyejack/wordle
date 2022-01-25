@@ -17,8 +17,12 @@ enum CharMatch {
     Exact,
 }
 
+enum InvalidationReason {
+	WrongLength,
+	UnknownWord,
+}
 enum GuessResult {
-    InvalidWord,
+    InvalidWord(InvalidationReason),
     WrongGuess,
     Correct,
 }
@@ -81,15 +85,16 @@ fn main() -> Result<()> {
 
     let start_time = Instant::now();
     let mut try_number = 0;
+
     while try_number < params.tries {
-        let guess_result = guess_word(&params.guess_wordlist, &params.target_word, &mut rng)?;
+        let guess_result = guess_word(&params.guess_wordlist, &params.target_word, &mut rng, (params.word_size, params.word_size))?;
         match guess_result {
             GuessResult::Correct => {
                 break;
             }
 
             GuessResult::WrongGuess => try_number += 1,
-            GuessResult::InvalidWord => {}
+            GuessResult::InvalidWord(_) => {}
         }
 
         let current_dur = start_time.elapsed();
@@ -118,17 +123,19 @@ fn guess_word(
     words: &Vec<String>,
     target_word: &String,
     rng: &mut impl Rng,
+	range: (usize, usize)
 ) -> Result<GuessResult> {
     let mut raw_input = String::new();
     stdin().read_line(&mut raw_input)?;
     let guessed_word = raw_input.trim().to_string();
 
-    if target_word.len() != guessed_word.len() {
+	if guessed_word.len() < range.0 ||
+		guessed_word.len() > range.1 {
         println!("Invalid length, try again.");
-        return Ok(GuessResult::InvalidWord);
+        return Ok(GuessResult::InvalidWord(InvalidationReason::WrongLength));
     } else if !words.contains(&guessed_word) {
         println!("Invalid word, try again.");
-        return Ok(GuessResult::InvalidWord);
+        return Ok(GuessResult::InvalidWord(InvalidationReason::UnknownWord));
     } else if *target_word == guessed_word {
         println!("You guessed it!");
         return Ok(GuessResult::Correct);
