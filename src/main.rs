@@ -73,7 +73,7 @@ fn main() -> Result<()> {
 
     // println!("Shhhhh ;) : {}", &params.target_word);
     println!(
-        "You have {} tries and {} seconds to guess a {} letter my word!",
+        "You have {} tries and {} seconds to guess a {} letter word!",
         params.tries,
         params.time_limit.as_secs(),
         params.word_size
@@ -143,6 +143,7 @@ fn guess_word(
         .chars()
         .zip(matches.iter())
         .for_each(|(t, m)| print_char(t, m));
+
     print!(" - ");
 
     Ok(GuessResult::WrongGuess)
