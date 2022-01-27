@@ -6,7 +6,7 @@ use std::{
     fs::File,
     io::stdin,
     io::{BufRead, BufReader},
-    time::{Duration, Instant}, hash::Hasher,
+	time::{Duration, Instant}
 };
 
 use anyhow::Result;
@@ -52,7 +52,6 @@ struct GameParameters {
     word_size: usize,
     tries: i32,
     guess_wordlist: HashSet<String>,
-    target_word: String,
     time_limit: Duration,
 }
 
@@ -75,8 +74,6 @@ fn setup_game(rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<G
     let time_limit = Duration::from_secs(60 * 60);
 
 
-    let target_word = answer_wordlist.iter().choose(rng).unwrap().to_string();
-
     let base_guess_wordlist = load_wordlist("/home/jack/Documents/jordle/words/guesses.txt", word_size)?;
     let guess_wordlist = base_guess_wordlist
         .into_iter()
@@ -88,21 +85,24 @@ fn setup_game(rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<G
         word_size,
         time_limit,
         guess_wordlist,
-        target_word,
     })
 }
 
 fn main() -> Result<()> {
 
+    let mut rng = rand::thread_rng();
+
     let answer_wordlist =
         load_wordlist("/home/jack/Documents/jordle/words/answers.txt", 5)?;
 
-    let mut rng = rand::thread_rng();
-	// let mut rng = rand::StdRng::from_seed(rand::Seed::seed_from_u64(1234));
     let params = setup_game(&mut rng, &answer_wordlist)?;
 
 	// play_regular_game(params, &mut rng)
 	play_auto_game(params, &mut rng, &answer_wordlist)
+}
+
+fn gen_target_word(answer_wordlist: &HashSet<String>, rng: &mut impl Rng) -> String {
+	answer_wordlist.iter().choose(rng).unwrap().to_string()
 }
 
 fn play_auto_game(params: GameParameters, rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<()> {
@@ -111,12 +111,14 @@ fn play_auto_game(params: GameParameters, rng: &mut impl Rng, answer_wordlist: &
 	let mut guess_count = 0;
 	let played_games = 1_000_000;
 	let bar = ProgressBar::new(played_games);
+
 	for _ in 0..played_games {
+		let target_word = gen_target_word(answer_wordlist, rng);
+
 		let guesses = auto_game(&params, rng, answer_wordlist)?;
 		guess_count += guesses;
 
 		// println!("Game done");
-		params.target_word = answer_wordlist.iter().choose(rng).unwrap().to_string();
 		bar.inc(1);
 	}
 	bar.finish();
@@ -133,13 +135,14 @@ fn auto_game(params: &GameParameters, rng: &mut impl Rng, answer_wordlist: &Hash
 	let mut guess_count = 0;
 
 	loop {
+		let target_word = gen_target_word(answer_wordlist, rng);
 		let counts = count_letter(&game_words);
 		let word = game_words.iter()
 			.map(|x| (x,score_word(x,&counts)))
 			.fold((&"".to_string(),0.0),|acc, item| if acc.1 > item.1 {acc} else {item})
 			.0.to_string();
 
-		let guess_result = guess_word(&word, &params.guess_wordlist, &params.target_word, rng, (params.word_size,params.word_size))?;
+		let guess_result = guess_word(&word, &params.guess_wordlist, &target_word, rng, (params.word_size,params.word_size))?;
 		guess_count += 1;
 
 		match guess_result {
@@ -173,7 +176,7 @@ fn determine_filter(matches: &Vec<CharMatch>) -> FilterCriteria {
 	}
 }
 
-fn play_regular_game(params: GameParameters, rng: &mut impl Rng)  -> Result<()>{
+fn play_regular_game(params: GameParameters, rng: &mut impl Rng, answer_wordlist: &HashSet<String>)  -> Result<()>{
     // println!("Shhhhh ;) : {}", &params.target_word);
     println!(
         "You have {} tries and {} seconds to guess a {} letter word!",
@@ -182,13 +185,15 @@ fn play_regular_game(params: GameParameters, rng: &mut impl Rng)  -> Result<()>{
         params.word_size
     );
 
+	let target_word = gen_target_word(answer_wordlist, rng);
+
     let start_time = Instant::now();
     let mut try_number = 0;
 
     while try_number < params.tries {
         let guess_result = guess_user_word(
             &params.guess_wordlist,
-            &params.target_word,
+            &target_word,
             rng,
             (params.word_size, params.word_size),
         )?;
@@ -238,7 +243,7 @@ fn play_regular_game(params: GameParameters, rng: &mut impl Rng)  -> Result<()>{
     if try_number >= params.tries {
         println!("Sorry you ran out of guesses.");
     }
-    println!("The word was: {}", params.target_word);
+    println!("The word was: {}", &target_word);
 
     Ok(())
 }
