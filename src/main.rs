@@ -12,20 +12,31 @@ use owo_colors::OwoColorize;
 use rand::{seq::IteratorRandom, Rng};
 
 #[derive(Debug)]
-enum CharMatch {
+enum CharAlignment {
     NotFound,
     Misplaced,
     Exact,
+}
+
+#[derive(Debug)]
+struct CharMatch {
+	c: char,
+	align: CharAlignment,
 }
 
 enum InvalidationReason {
     WrongLength,
     UnknownWord,
 }
+
 enum GuessResult {
-    InvalidWord(InvalidationReason),
-    WrongGuess,
-    Correct,
+	Correct,
+	Wrong,
+}
+
+enum WordValidation {
+    Invalid(InvalidationReason, String),
+	Valid(GuessResult, Vec<CharMatch>)
 }
 
 const MUTATE_PROB: f64 = 0.2;
@@ -100,14 +111,15 @@ fn main() -> Result<()> {
             (params.word_size, params.word_size),
         )?;
 
-        match guess_result {
-            GuessResult::Correct => {
-                break;
-            }
-
-            GuessResult::WrongGuess => try_number += 1,
-            GuessResult::InvalidWord(_) => {}
-        }
+		match guess_result {
+			WordValidation::Valid(guess,_) => {
+				match guess {
+					GuessResult::Correct => {break;},
+					GuessResult::Wrong => {try_number += 1},
+				}
+			},
+			WordValidation::Invalid(_,_) => {}
+		}
 
         let current_dur = start_time.elapsed();
         if current_dur >= params.time_limit {
@@ -131,45 +143,53 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+fn get_user_guess() -> Result<String> {
+    let mut raw_input = String::new();
+    stdin().read_line(&mut raw_input)?;
+    let guessed_word = raw_input.trim().to_string();
+
+	Ok(guessed_word)
+}
+
 fn guess_word(
     words: &HashSet<String>,
     target_word: &str,
     rng: &mut impl Rng,
     range: (usize, usize),
-) -> Result<GuessResult> {
-    let mut raw_input = String::new();
-    stdin().read_line(&mut raw_input)?;
-    let guessed_word = raw_input.trim().to_string();
+) -> Result<WordValidation> {
+	let guessed_word = get_user_guess()?;
 
     if guessed_word.len() < range.0 || guessed_word.len() > range.1 {
         println!("Invalid length, try again.");
-        return Ok(GuessResult::InvalidWord(InvalidationReason::WrongLength));
+        return Ok(WordValidation::Invalid(InvalidationReason::WrongLength, guessed_word));
     } else if !words.contains(&guessed_word) {
         println!("Invalid word, try again.");
-        return Ok(GuessResult::InvalidWord(InvalidationReason::UnknownWord));
-    } else if *target_word == guessed_word {
-        println!("You guessed it!");
-        return Ok(GuessResult::Correct);
+        return Ok(WordValidation::Invalid(InvalidationReason::UnknownWord, guessed_word));
     }
 
-    let matches: Vec<CharMatch> = match_word(target_word, &guessed_word)
+	let matches= match_word(target_word, &guessed_word);
+
+	if *target_word == guessed_word {
+        println!("You guessed it!");
+        return Ok(WordValidation::Valid(GuessResult::Correct, matches));
+    }
+
+    let matches: Vec<CharMatch> = matches
         .into_iter()
-        .map(|x| mutate_match(x, rng))
+        // .map(|x| mutate_match(x, rng))
         .collect();
 
-    guessed_word
-        .chars()
-        .zip(matches.iter())
-        .for_each(|(t, m)| print_char(t, m));
+        matches.iter()
+        .for_each(|m| print_char(m));
 
     print!(" - ");
 
-    Ok(GuessResult::WrongGuess)
+    Ok(WordValidation::Valid(GuessResult::Wrong, matches))
 }
 
-fn mutate_match(cmatch: CharMatch, rng: &mut impl Rng) -> CharMatch {
+fn mutate_match(cmatch: CharAlignment, rng: &mut impl Rng) -> CharAlignment {
     let prob = match cmatch {
-        CharMatch::Misplaced => MUTATE_PROB * 2.0,
+        CharAlignment::Misplaced => MUTATE_PROB * 2.0,
         _ => MUTATE_PROB,
     };
 
@@ -177,13 +197,13 @@ fn mutate_match(cmatch: CharMatch, rng: &mut impl Rng) -> CharMatch {
 
     if should_mutate {
         match cmatch {
-            CharMatch::Exact => CharMatch::Misplaced,
-            CharMatch::NotFound => CharMatch::Misplaced,
-            CharMatch::Misplaced => {
+            CharAlignment::Exact => CharAlignment::Misplaced,
+            CharAlignment::NotFound => CharAlignment::Misplaced,
+            CharAlignment::Misplaced => {
                 if rng.gen_bool(0.5) {
-                    CharMatch::Exact
+                    CharAlignment::Exact
                 } else {
-                    CharMatch::NotFound
+                    CharAlignment::NotFound
                 }
             }
         }
@@ -192,11 +212,12 @@ fn mutate_match(cmatch: CharMatch, rng: &mut impl Rng) -> CharMatch {
     }
 }
 
-fn print_char(c: char, cmatch: &CharMatch) {
-    match *cmatch {
-        CharMatch::Exact => print!("{}", c.fg::<Black>().bg::<Green>()),
-        CharMatch::Misplaced => print!("{}", c.fg::<Black>().bg::<BrightBlue>()),
-        CharMatch::NotFound => print!("{}", c.fg::<White>().bg::<BrightBlack>()),
+fn print_char(cmatch: &CharMatch) {
+	let (c, calign) = (cmatch.c, &cmatch.align);
+    match *calign {
+        CharAlignment::Exact => print!("{}", c.fg::<Black>().bg::<Green>()),
+        CharAlignment::Misplaced => print!("{}", c.fg::<Black>().bg::<BrightBlue>()),
+        CharAlignment::NotFound => print!("{}", c.fg::<White>().bg::<BrightBlack>()),
     }
 }
 
@@ -205,13 +226,15 @@ fn match_word(target: &str, guess: &str) -> Vec<CharMatch> {
         .chars()
         .zip(guess.chars())
         .map(|(t, g)| {
-            if t == g {
-                CharMatch::Exact
+            let align = if t == g {
+                CharAlignment::Exact
             } else if target.contains(g) {
-                CharMatch::Misplaced
+                CharAlignment::Misplaced
             } else {
-                CharMatch::NotFound
-            }
+                CharAlignment::NotFound
+            };
+
+			CharMatch { c: g, align}
         })
         .collect()
 }
