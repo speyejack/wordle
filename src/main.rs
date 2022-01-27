@@ -110,6 +110,7 @@ fn play_auto_game(params: GameParameters, rng: &mut impl Rng, answer_wordlist: &
 	println!("Starting games");
 	let mut guess_count = 0;
 	let played_games = 1_000_000;
+	let mut fail_count = 0;
 	let bar = ProgressBar::new(played_games);
 
 	for _ in 0..played_games {
@@ -117,15 +118,16 @@ fn play_auto_game(params: GameParameters, rng: &mut impl Rng, answer_wordlist: &
 
 		let guesses = auto_game(&params, rng, answer_wordlist)?;
 		guess_count += guesses;
+		let failed = guesses > 6;
+		fail_count += if failed {1} else {0};
 
-		// println!("Game done");
 		bar.inc(1);
 	}
 	bar.finish();
 
-	println!("Played {} games, with {}",
+	println!("Played {} games, with {} avg and {} failures",
 			 played_games,
-			 guess_count as f32 / played_games as f32); 
+			 guess_count as f32 / played_games as f32, fail_count); 
 
 	Ok(())
 }
