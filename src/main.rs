@@ -1,3 +1,5 @@
+mod solver;
+
 use std::{
     collections::HashSet,
     fs::File,
