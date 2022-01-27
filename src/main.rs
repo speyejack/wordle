@@ -108,17 +108,16 @@ fn play_auto_game(
     rng: &mut impl Rng,
     answer_wordlist: &HashSet<String>,
 ) -> Result<()> {
-    let mut params = params;
-    println!("Starting games");
-    let mut guess_count = 0;
     let played_games = 1_000_000;
-    let mut fail_count = 0;
-    let bar = ProgressBar::new(played_games);
 
+    let mut guess_count = 0;
+    let mut fail_count = 0;
+
+    let bar = ProgressBar::new(played_games);
     for _ in 0..played_games {
         let target_word = gen_target_word(answer_wordlist, rng);
 
-        let guesses = auto_game(&params, rng, answer_wordlist)?;
+        let guesses = auto_game(&params, rng, answer_wordlist, &target_word)?;
         guess_count += guesses;
         let failed = guesses > 6;
         fail_count += if failed { 1 } else { 0 };
@@ -141,12 +140,12 @@ fn auto_game(
     params: &GameParameters,
     rng: &mut impl Rng,
     answer_wordlist: &HashSet<String>,
+	target_word: &str,
 ) -> Result<i32> {
     let mut game_words = answer_wordlist.clone();
     let mut guess_count = 0;
 
     loop {
-        let target_word = gen_target_word(answer_wordlist, rng);
         let counts = count_letter(&game_words);
         let word = game_words
             .iter()
