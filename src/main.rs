@@ -114,13 +114,31 @@ fn main() -> Result<()> {
         )?;
 
 		match guess_result {
-			WordValidation::Valid(guess,_) => {
+			WordValidation::Valid(guess,matches) => {
+
+				matches.iter()
+					.for_each(|m| print_char(m));
+
+				print!(" - ");
+
 				match guess {
-					GuessResult::Correct => {break;},
+					GuessResult::Correct => {
+						println!("You guessed it!");
+						break;
+					},
 					GuessResult::Wrong => {try_number += 1},
 				}
 			},
-			WordValidation::Invalid(_,_) => {}
+			WordValidation::Invalid(reason,_) => {
+				match reason {
+					InvalidationReason::WrongLength => {
+						println!("Invalid length, try again.");
+					},
+					InvalidationReason::UnknownWord => {
+						println!("Invalid word, try again.");
+					}
+				}
+			}
 		}
 
         let current_dur = start_time.elapsed();
@@ -162,17 +180,14 @@ fn guess_word(
 	let guessed_word = get_user_guess()?;
 
     if guessed_word.len() < range.0 || guessed_word.len() > range.1 {
-        println!("Invalid length, try again.");
         return Ok(WordValidation::Invalid(InvalidationReason::WrongLength, guessed_word));
     } else if !words.contains(&guessed_word) {
-        println!("Invalid word, try again.");
         return Ok(WordValidation::Invalid(InvalidationReason::UnknownWord, guessed_word));
     }
 
 	let matches= match_word(target_word, &guessed_word);
 
 	if *target_word == guessed_word {
-        println!("You guessed it!");
         return Ok(WordValidation::Valid(GuessResult::Correct, matches));
     }
 
@@ -181,10 +196,6 @@ fn guess_word(
         // .map(|x| mutate_match(x, rng))
         .collect();
 
-        matches.iter()
-        .for_each(|m| print_char(m));
-
-    print!(" - ");
 
     Ok(WordValidation::Valid(GuessResult::Wrong, matches))
 }
