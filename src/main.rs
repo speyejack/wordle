@@ -1,14 +1,16 @@
 mod solver;
+use crate::solver::*;
 
 use std::{
     collections::HashSet,
     fs::File,
     io::stdin,
     io::{BufRead, BufReader},
-    time::{Duration, Instant},
+    time::{Duration, Instant}, hash::Hasher,
 };
 
 use anyhow::Result;
+use indicatif::ProgressBar;
 use owo_colors::colors::*;
 use owo_colors::OwoColorize;
 use rand::{seq::IteratorRandom, Rng};
@@ -26,16 +28,19 @@ struct CharMatch {
 	align: CharAlignment,
 }
 
+#[derive(Debug)]
 enum InvalidationReason {
     WrongLength,
     UnknownWord,
 }
 
+#[derive(Debug)]
 enum GuessResult {
 	Correct,
 	Wrong,
 }
 
+#[derive(Debug)]
 enum WordValidation {
     Invalid(InvalidationReason, String),
 	Valid(GuessResult, Vec<CharMatch>)
@@ -63,21 +68,19 @@ fn load_wordlist(filename: &str, word_size: usize) -> Result<HashSet<String>> {
     Ok(word_list)
 }
 
-fn setup_game(rng: &mut impl Rng) -> Result<GameParameters> {
+fn setup_game(rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<GameParameters> {
     let tries = 30;
     let word_size = 5;
 
     let time_limit = Duration::from_secs(60 * 60);
 
-    let answer_wordlist =
-        load_wordlist("/home/jack/Documents/jordle/words/answers.txt", word_size)?;
 
     let target_word = answer_wordlist.iter().choose(rng).unwrap().to_string();
 
-    let base_guess_wordlist = load_wordlist("/home/jack/Downloads/words.txt", word_size)?;
+    let base_guess_wordlist = load_wordlist("/home/jack/Documents/jordle/words/guesses.txt", word_size)?;
     let guess_wordlist = base_guess_wordlist
         .into_iter()
-        .chain(answer_wordlist.into_iter())
+        .chain(answer_wordlist.clone().into_iter())
         .collect::<HashSet<String>>();
 
     Ok(GameParameters {
@@ -90,10 +93,87 @@ fn setup_game(rng: &mut impl Rng) -> Result<GameParameters> {
 }
 
 fn main() -> Result<()> {
+
+    let answer_wordlist =
+        load_wordlist("/home/jack/Documents/jordle/words/answers.txt", 5)?;
+
     let mut rng = rand::thread_rng();
+	// let mut rng = rand::StdRng::from_seed(rand::Seed::seed_from_u64(1234));
+    let params = setup_game(&mut rng, &answer_wordlist)?;
 
-    let params = setup_game(&mut rng)?;
+	// play_regular_game(params, &mut rng)
+	play_auto_game(params, &mut rng, &answer_wordlist)
+}
 
+fn play_auto_game(params: GameParameters, rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<()> {
+	let mut params = params;
+	println!("Starting games");
+	let mut guess_count = 0;
+	let played_games = 1_000_000;
+	let bar = ProgressBar::new(played_games);
+	for _ in 0..played_games {
+		let guesses = auto_game(&params, rng, answer_wordlist)?;
+		guess_count += guesses;
+
+		// println!("Game done");
+		params.target_word = answer_wordlist.iter().choose(rng).unwrap().to_string();
+		bar.inc(1);
+	}
+	bar.finish();
+
+	println!("Played {} games, with {}",
+			 played_games,
+			 guess_count as f32 / played_games as f32); 
+
+	Ok(())
+}
+
+fn auto_game(params: &GameParameters, rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<i32> {
+	let mut game_words = answer_wordlist.clone();
+	let mut guess_count = 0;
+
+	loop {
+		let counts = count_letter(&game_words);
+		let word = game_words.iter()
+			.map(|x| (x,score_word(x,&counts)))
+			.fold((&"".to_string(),0.0),|acc, item| if acc.1 > item.1 {acc} else {item})
+			.0.to_string();
+
+		let guess_result = guess_word(&word, &params.guess_wordlist, &params.target_word, rng, (params.word_size,params.word_size))?;
+		guess_count += 1;
+
+		match guess_result {
+			WordValidation::Valid(result, matches) => {
+				if let GuessResult::Correct = result {
+					return Ok(guess_count);
+				}
+
+				let filter = determine_filter(&matches);
+				let new_words: HashSet<String> = game_words.into_iter().filter(|word| is_viable_word(word, &filter)).collect();
+				
+				game_words = new_words;
+
+			}
+			WordValidation::Invalid(_,_) => unreachable!(),
+		}
+
+	}
+}
+
+fn determine_filter(matches: &Vec<CharMatch>) -> FilterCriteria {
+	let size = (5,5);
+	let pos =  matches.iter().map(|x| if let CharAlignment::Exact = x.align {Some(x.c)} else {None}).collect();
+	let nopos =  matches.iter().map(|x| if let CharAlignment::Misplaced = x.align {vec![x.c]} else {vec![]}).collect();
+
+	let inc = matches.iter().filter_map(|x| match x.align {CharAlignment::NotFound => None, _ => Some(x.c)}).collect();
+	let exc = matches.iter().filter_map(|x| match x.align {CharAlignment::NotFound => Some(x.c), _ => None}).collect();
+
+	FilterCriteria{
+		pos,nopos,inc,exc,size
+	}
+}
+
+fn play_regular_game(params: GameParameters, rng: &mut impl Rng)  -> Result<()>{
     // println!("Shhhhh ;) : {}", &params.target_word);
     println!(
         "You have {} tries and {} seconds to guess a {} letter word!",
@@ -106,10 +186,10 @@ fn main() -> Result<()> {
     let mut try_number = 0;
 
     while try_number < params.tries {
-        let guess_result = guess_word(
+        let guess_result = guess_user_word(
             &params.guess_wordlist,
             &params.target_word,
-            &mut rng,
+            rng,
             (params.word_size, params.word_size),
         )?;
 
@@ -171,23 +251,34 @@ fn get_user_guess() -> Result<String> {
 	Ok(guessed_word)
 }
 
-fn guess_word(
+fn guess_user_word(
     words: &HashSet<String>,
     target_word: &str,
     rng: &mut impl Rng,
     range: (usize, usize),
 ) -> Result<WordValidation> {
 	let guessed_word = get_user_guess()?;
+	guess_word(&guessed_word, words, target_word, rng, range)
+}
+
+fn guess_word(
+	guessed_word: &String,
+    words: &HashSet<String>,
+    target_word: &str,
+    rng: &mut impl Rng,
+    range: (usize, usize),
+) -> Result<WordValidation> {
+	// println!("Using guessed_word {}", guessed_word);
 
     if guessed_word.len() < range.0 || guessed_word.len() > range.1 {
-        return Ok(WordValidation::Invalid(InvalidationReason::WrongLength, guessed_word));
-    } else if !words.contains(&guessed_word) {
-        return Ok(WordValidation::Invalid(InvalidationReason::UnknownWord, guessed_word));
+        return Ok(WordValidation::Invalid(InvalidationReason::WrongLength, guessed_word.to_string()));
+    } else if !words.contains(guessed_word) {
+        return Ok(WordValidation::Invalid(InvalidationReason::UnknownWord, guessed_word.to_string()));
     }
 
 	let matches= match_word(target_word, &guessed_word);
 
-	if *target_word == guessed_word {
+	if *target_word == *guessed_word {
         return Ok(WordValidation::Valid(GuessResult::Correct, matches));
     }
 
@@ -195,7 +286,6 @@ fn guess_word(
         .into_iter()
         // .map(|x| mutate_match(x, rng))
         .collect();
-
 
     Ok(WordValidation::Valid(GuessResult::Wrong, matches))
 }

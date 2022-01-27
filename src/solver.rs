@@ -4,7 +4,7 @@ type LetterCount = HashMap<char,i32>;
 type LetterFreq = HashMap<char,f32>;
 type PosLetterFreq = Vec<LetterFreq>;
 
-fn count_letter(word_list: HashSet<String>) -> PosLetterFreq {
+pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
 	let max_size = word_list.iter().map(|x| x.len()).max().unwrap_or(0);
 
 	let mut pos_count: Vec<LetterCount> = (0..max_size).map(|_| LetterCount::new()).collect();
@@ -34,7 +34,7 @@ fn count_letter(word_list: HashSet<String>) -> PosLetterFreq {
 	final_count
 }
 
-fn score_word(word: &str, letter_freq: PosLetterFreq) -> f32 {
+pub fn score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
 	let char_scores: Vec<(char, f32)> = word.chars().zip(letter_freq.iter())
 		.map(|(c, local_letter_freq)| {
 			let score: f32 = *local_letter_freq.get(&c).unwrap_or(&0.0);
@@ -51,16 +51,16 @@ fn score_word(word: &str, letter_freq: PosLetterFreq) -> f32 {
 	final_score
 }
 
-
-struct FilterCriteria {
-	pos: Vec<Option<char>>,
-	nopos: Vec<Vec<char>>,
-	inc: Vec<char>,
-	exc: Vec<char>,
-	size: (usize, usize),
+#[derive(Debug)]
+pub struct FilterCriteria {
+	pub pos: Vec<Option<char>>,
+	pub nopos: Vec<Vec<char>>,
+	pub inc: Vec<char>,
+	pub exc: Vec<char>,
+	pub size: (usize, usize),
 }
 
-fn is_viable_word(word: &str, criteria: &FilterCriteria) -> bool
+pub fn is_viable_word(word: &str, criteria: &FilterCriteria) -> bool
 {
 	let incorrect_size = word.len() < criteria.size.0 || word.len() > criteria.size.1;
 	if incorrect_size {
@@ -79,18 +79,18 @@ fn is_viable_word(word: &str, criteria: &FilterCriteria) -> bool
 
 	let includes_positional_letters = criteria.pos.iter()
 		.zip(word.chars())
-		.all(|(inc, c)| inc.map(|x| x==c).unwrap_or(false));
+		.all(|(inc, c)| inc.map(|x| x==c).unwrap_or(true));
 
 	if !includes_positional_letters {
 		return false;
 	}
 
 	let excludes_positional_letters = criteria.nopos.iter()
-		.zip(word.chars()).all(|(inc, c)| {
-			inc.into_iter().all(|x| *x!=c)
+		.zip(word.chars()).all(|(exc, c)| {
+			exc.into_iter().all(|x| *x!=c)
 		});
 
-	if excludes_positional_letters {
+	if !excludes_positional_letters {
 		return false;
 	}
 
