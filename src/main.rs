@@ -140,7 +140,7 @@ fn auto_game(
     params: &GameParameters,
     rng: &mut impl Rng,
     answer_wordlist: &HashSet<String>,
-	target_word: &str,
+    target_word: &str,
 ) -> Result<i32> {
     let mut game_words = answer_wordlist.clone();
     let mut guess_count = 0;
@@ -163,7 +163,7 @@ fn auto_game(
         let guess_result = guess_word(
             &word,
             &params.guess_wordlist,
-            &target_word,
+            target_word,
             rng,
             (params.word_size, params.word_size),
         )?;
@@ -188,7 +188,7 @@ fn auto_game(
     }
 }
 
-fn determine_filter(matches: &Vec<CharMatch>) -> FilterCriteria {
+fn determine_filter(matches: &[CharMatch]) -> FilterCriteria {
     let size = (5, 5);
     let pos = matches
         .iter()
@@ -263,7 +263,7 @@ fn play_regular_game(
 
         match guess_result {
             WordValidation::Valid(guess, matches) => {
-                matches.iter().for_each(|m| print_char(m));
+                matches.iter().for_each(print_char);
 
                 print!(" - ");
 
@@ -326,7 +326,7 @@ fn guess_user_word(
 }
 
 fn guess_word(
-    guessed_word: &String,
+    guessed_word: &str,
     words: &HashSet<String>,
     target_word: &str,
     rng: &mut impl Rng,
@@ -346,7 +346,7 @@ fn guess_word(
         ));
     }
 
-    let matches = match_word(target_word, &guessed_word);
+    let matches = match_word(target_word, guessed_word);
 
     if *target_word == *guessed_word {
         return Ok(WordValidation::Valid(GuessResult::Correct, matches));

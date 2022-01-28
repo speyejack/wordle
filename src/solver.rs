@@ -21,7 +21,8 @@ pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
     let pos_weight = 0.1;
 
     let tot_amount = word_list.len() as f32;
-    let final_count = pos_count
+
+    pos_count
         .into_iter()
         .map(|posmap| {
             posmap
@@ -35,9 +36,7 @@ pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
                 })
                 .collect()
         })
-        .collect();
-
-    final_count
+        .collect()
 }
 
 pub fn score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
@@ -99,7 +98,7 @@ pub fn is_viable_word(word: &str, criteria: &FilterCriteria) -> bool {
         .nopos
         .iter()
         .zip(word.chars())
-        .all(|(exc, c)| exc.into_iter().all(|x| *x != c));
+        .all(|(exc, c)| exc.iter().all(|x| *x != c));
 
     if !excludes_positional_letters {
         return false;
