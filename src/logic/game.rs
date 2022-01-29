@@ -1,5 +1,3 @@
-use super::solver::*;
-
 use std::{
     collections::HashSet,
     fs::File,
@@ -62,7 +60,7 @@ pub fn load_wordlist(filename: &str, word_size: usize) -> Result<HashSet<String>
     Ok(word_list)
 }
 
-pub fn setup_game(rng: &mut impl Rng, answer_wordlist: &HashSet<String>) -> Result<GameParameters> {
+pub fn setup_game(answer_wordlist: &HashSet<String>) -> Result<GameParameters> {
     let tries = 30;
     let word_size = 5;
 

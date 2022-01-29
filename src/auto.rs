@@ -1,5 +1,6 @@
 mod logic;
-use logic::solver::*;
+mod solver;
+use solver::*;
 use logic::game::*;
 
 use std::collections::HashSet;
@@ -13,7 +14,7 @@ fn main() -> Result<()> {
 
     let answer_wordlist = load_wordlist("/home/jack/Documents/jordle/words/answers.txt", 5)?;
 
-    let params = setup_game(&mut rng, &answer_wordlist)?;
+    let params = setup_game(&answer_wordlist)?;
 
     play_auto_game(params, &mut rng, &answer_wordlist)
 }

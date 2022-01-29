@@ -1,20 +1,16 @@
 mod logic;
-use logic::solver::*;
 use logic::game::*;
 
 use std::{
     collections::HashSet,
-    fs::File,
     io::stdin,
-    io::{BufRead, BufReader},
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use anyhow::Result;
-use indicatif::ProgressBar;
 use owo_colors::colors::*;
 use owo_colors::OwoColorize;
-use rand::{seq::IteratorRandom, Rng};
+use rand::Rng;
 
 
 fn main() -> Result<()> {
@@ -22,7 +18,7 @@ fn main() -> Result<()> {
 
     let answer_wordlist = load_wordlist("/home/jack/Documents/jordle/words/answers.txt", 5)?;
 
-    let params = setup_game(&mut rng, &answer_wordlist)?;
+    let params = setup_game(&answer_wordlist)?;
 
     play_regular_game(params, &mut rng, &answer_wordlist)
 }
