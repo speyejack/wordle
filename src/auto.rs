@@ -1,6 +1,9 @@
 mod logic;
 mod solver;
+
 use solver::*;
+use solver::filters::*;
+use solver::scoring::*;
 use logic::game::*;
 
 use std::collections::HashSet;
@@ -104,49 +107,3 @@ fn auto_game(
     }
 }
 
-fn determine_filter(matches: &[CharMatch]) -> FilterCriteria {
-    let size = (5, 5);
-    let pos = matches
-        .iter()
-        .map(|x| {
-            if let CharAlignment::Exact = x.align {
-                Some(x.c)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let nopos = matches
-        .iter()
-        .map(|x| {
-            if let CharAlignment::Misplaced = x.align {
-                vec![x.c]
-            } else {
-                vec![]
-            }
-        })
-        .collect();
-
-    let inc = matches
-        .iter()
-        .filter_map(|x| match x.align {
-            CharAlignment::NotFound => None,
-            _ => Some(x.c),
-        })
-        .collect();
-    let exc = matches
-        .iter()
-        .filter_map(|x| match x.align {
-            CharAlignment::NotFound => Some(x.c),
-            _ => None,
-        })
-        .collect();
-
-    FilterCriteria {
-        pos,
-        nopos,
-        inc,
-        exc,
-        size,
-    }
-}

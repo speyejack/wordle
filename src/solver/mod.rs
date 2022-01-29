@@ -1,3 +1,6 @@
+pub mod filters;
+pub mod scoring;
+
 use std::collections::{HashMap, HashSet};
 
 type LetterCount = HashMap<char, i32>;
@@ -18,7 +21,7 @@ pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
     }
 
     let tot_weight = 0.1;
-    let pos_weight = 0.1;
+    let pos_weight = 1.0;
 
     let tot_amount = word_list.len() as f32;
 
@@ -39,70 +42,3 @@ pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
         .collect()
 }
 
-pub fn score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
-    let char_scores: Vec<(char, f32)> = word
-        .chars()
-        .zip(letter_freq.iter())
-        .map(|(c, local_letter_freq)| {
-            let score: f32 = *local_letter_freq.get(&c).unwrap_or(&0.0);
-            (c, score)
-        })
-        .collect();
-
-    let mut letter_map = HashMap::new();
-    char_scores.iter().for_each(|(c, score)| {
-        let max_score = letter_map.entry(*c).or_insert(0.0);
-        *max_score = score.max(*max_score);
-    });
-
-    let final_score = letter_map.iter().map(|x| *x.1).sum();
-    final_score
-}
-
-#[derive(Debug)]
-pub struct FilterCriteria {
-    pub pos: Vec<Option<char>>,
-    pub nopos: Vec<Vec<char>>,
-    pub inc: Vec<char>,
-    pub exc: Vec<char>,
-    pub size: (usize, usize),
-}
-
-pub fn is_viable_word(word: &str, criteria: &FilterCriteria) -> bool {
-    let incorrect_size = word.len() < criteria.size.0 || word.len() > criteria.size.1;
-    if incorrect_size {
-        return false;
-    }
-
-    let includes_letters = criteria.inc.iter().all(|c| word.contains(*c));
-    if !includes_letters {
-        return false;
-    }
-
-    let excludes_letters = criteria.exc.iter().all(|c| !word.contains(*c));
-    if !excludes_letters {
-        return false;
-    }
-
-    let includes_positional_letters = criteria
-        .pos
-        .iter()
-        .zip(word.chars())
-        .all(|(inc, c)| inc.map(|x| x == c).unwrap_or(true));
-
-    if !includes_positional_letters {
-        return false;
-    }
-
-    let excludes_positional_letters = criteria
-        .nopos
-        .iter()
-        .zip(word.chars())
-        .all(|(exc, c)| exc.iter().all(|x| *x != c));
-
-    if !excludes_positional_letters {
-        return false;
-    }
-
-    true
-}
