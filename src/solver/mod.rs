@@ -41,4 +41,3 @@ pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
         })
         .collect()
 }
-

@@ -1,16 +1,15 @@
 mod logic;
 mod solver;
 
-use solver::*;
+use logic::game::*;
 use solver::filters::*;
 use solver::scoring::*;
-use logic::game::*;
+use solver::*;
 
-use std::collections::HashSet;
 use anyhow::Result;
 use indicatif::ProgressBar;
 use rand::Rng;
-
+use std::collections::HashSet;
 
 fn main() -> Result<()> {
     let mut rng = rand::thread_rng();
@@ -94,10 +93,10 @@ fn auto_game(
                     return Ok(guess_count);
                 }
 
-                let filter = determine_filter(&matches);
+                let filter = PosFilterCriteria::from_matches(&matches);
                 let new_words: HashSet<String> = game_words
                     .into_iter()
-                    .filter(|word| is_viable_word(word, &filter))
+                    .filter(|word| filter.check(word))
                     .collect();
 
                 game_words = new_words;
@@ -106,4 +105,3 @@ fn auto_game(
         }
     }
 }
-

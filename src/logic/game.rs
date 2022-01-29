@@ -17,7 +17,7 @@ pub enum CharAlignment {
 
 #[derive(Debug)]
 pub struct CharMatch {
-	pub c: char,
+    pub c: char,
     pub align: CharAlignment,
 }
 

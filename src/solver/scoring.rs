@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use super::PosLetterFreq;
+use std::collections::HashMap;
 
 pub fn score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
     let char_scores: Vec<(char, f32)> = word

@@ -1,17 +1,12 @@
 mod logic;
 use logic::game::*;
 
-use std::{
-    collections::HashSet,
-    io::stdin,
-    time::Instant,
-};
+use std::{collections::HashSet, io::stdin, time::Instant};
 
 use anyhow::Result;
 use owo_colors::colors::*;
 use owo_colors::OwoColorize;
 use rand::Rng;
-
 
 fn main() -> Result<()> {
     let mut rng = rand::thread_rng();
