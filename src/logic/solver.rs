@@ -40,6 +40,16 @@ pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
 }
 
 pub fn score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
+	word
+		.chars()
+		.zip(letter_freq.iter())
+		.map(|(c, local_letter_freq)| {
+			let score: f32 = *local_letter_freq.get(&c).unwrap_or(&0.0);
+			score
+		}).sum()
+}
+
+pub fn old_score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
     let char_scores: Vec<(char, f32)> = word
         .chars()
         .zip(letter_freq.iter())

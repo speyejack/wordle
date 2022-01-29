@@ -10,3 +10,11 @@ owo-colors="3.2.0"
 anyhow = "*"
 rand = "*"
 indicatif = "0.16.2"
+
+[[bin]]
+name = "jordle"
+path = "src/user_game.rs"
+
+[[bin]]
+name = "solver"
+path = "src/auto.rs"
