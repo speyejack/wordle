@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::Result;
 use rand::{seq::IteratorRandom, Rng};
+use super::mutator::*;
 
 #[derive(Debug)]
 pub enum CharAlignment {
@@ -38,8 +39,6 @@ pub enum WordValidation {
     Invalid(InvalidationReason, String),
     Valid(GuessResult, Vec<CharMatch>),
 }
-
-const MUTATE_PROB: f64 = 0.2;
 
 pub struct GameParameters {
     pub word_size: usize,
@@ -112,37 +111,14 @@ pub fn guess_word(
         return Ok(WordValidation::Valid(GuessResult::Correct, matches));
     }
 
+	let mutator = NoopMutator::default();
+
     let matches: Vec<CharMatch> = matches
         .into_iter()
-        // .map(|x| mutate_match(x, rng))
+        .map(|x| CharMatch{align: mutator.mutate(x.align, rng), c:x.c})
         .collect();
 
     Ok(WordValidation::Valid(GuessResult::Wrong, matches))
-}
-
-fn mutate_match(cmatch: CharAlignment, rng: &mut impl Rng) -> CharAlignment {
-    let prob = match cmatch {
-        CharAlignment::Misplaced => MUTATE_PROB * 2.0,
-        _ => MUTATE_PROB,
-    };
-
-    let should_mutate = rng.gen_bool(prob);
-
-    if should_mutate {
-        match cmatch {
-            CharAlignment::Exact => CharAlignment::Misplaced,
-            CharAlignment::NotFound => CharAlignment::Misplaced,
-            CharAlignment::Misplaced => {
-                if rng.gen_bool(0.5) {
-                    CharAlignment::Exact
-                } else {
-                    CharAlignment::NotFound
-                }
-            }
-        }
-    } else {
-        cmatch
-    }
 }
 
 fn match_word(target: &str, guess: &str) -> Vec<CharMatch> {
