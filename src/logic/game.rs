@@ -5,9 +5,9 @@ use std::{
     time::Duration,
 };
 
+use super::mutator::*;
 use anyhow::Result;
 use rand::{seq::IteratorRandom, Rng};
-use super::mutator::*;
 
 #[derive(Debug)]
 pub enum CharAlignment {
@@ -111,11 +111,15 @@ pub fn guess_word(
         return Ok(WordValidation::Valid(GuessResult::Correct, matches));
     }
 
-	let mutator = NoopMutator::default();
+    // let mutator = NoopMutator::default();
+    let mutator = NoopMutator::default();
 
     let matches: Vec<CharMatch> = matches
         .into_iter()
-        .map(|x| CharMatch{align: mutator.mutate(x.align, rng), c:x.c})
+        .map(|x| CharMatch {
+            align: mutator.mutate(x.align, rng),
+            c: x.c,
+        })
         .collect();
 
     Ok(WordValidation::Valid(GuessResult::Wrong, matches))
