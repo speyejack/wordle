@@ -1,3 +1,4 @@
+use web_sys::console;
 use anyhow::Result;
 use iced::{
     button, Align, Button, Color, Column, Container, Element, Length, Row, Sandbox, Settings,
@@ -5,13 +6,12 @@ use iced::{
 };
 
 fn main() -> iced::Result {
+	console::log_1(&"Hello using web-sys".into());
     Wordle::run(Settings::default())
 }
 
-#[derive(Default)]
 struct Wordle {
-    // The counter value
-    value: i32,
+	words: Vec<WordRow>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -21,14 +21,25 @@ impl Sandbox for Wordle {
     type Message = Message;
 
     fn new() -> Self {
-        Self::default()
+        // Self::default()
+		Wordle {
+			words: vec![
+				WordRow::new("helo ".to_string()),
+				WordRow::new("helo ".to_string()),
+				WordRow::new("helo ".to_string()),
+				WordRow::new("helo ".to_string()),
+				WordRow::new("helo ".to_string()),
+				WordRow::new("helo ".to_string()),
+			]
+		}
     }
 
     fn title(&self) -> String {
-        String::from("Jordle")
+        "Jordle".to_string()
     }
 
     fn view(&mut self) -> Element<Message> {
+		console::log_1(&"Getting to view".into());
         // We use a column: a simple vertical layout
         let size = 40;
         let padding = 4;
@@ -36,30 +47,22 @@ impl Sandbox for Wordle {
             .align_items(Align::Center)
             .spacing(padding)
             .push(Space::new(Length::Fill, Length::FillPortion(1)));
-        let string = "helo ";
-        for _row_i in 0..6 {
-            let mut row = Row::new().align_items(Align::Center).spacing(padding);
-            for col_c in string.chars() {
-                let contain = Container::new(Text::new(col_c).size(30))
-                    .style(match col_c {
-                        'h' => style::Tile::Correct,
-                        'e' => style::Tile::WrongPlace,
-                        'l' => style::Tile::NotFound,
-                        'o' => style::Tile::NotEntered,
-                        _ => style::Tile::Empty,
-                    })
-                    .center_x()
-                    .center_y()
-                    .width(Length::Units(size))
-                    .height(Length::Units(size));
-                row = row.push(contain);
-            }
-            base = base.push(row);
-        }
 
-        base.push(Space::new(Length::Fill, Length::FillPortion(1)))
-            .into()
-    }
+		for wordrow in &mut self.words {
+			base = base.push(wordrow.view())
+		}
+
+        let base = base
+			.push(Space::new(Length::Fill, Length::FillPortion(1)));
+
+		Container::new(base)
+			.width(Length::Fill)
+			.height(Length::Fill)
+			.center_x()
+			.center_y()
+			.style(style::Theme::Dark)
+			.into()
+	}
 
     fn update(&mut self, message: Message) {}
 
@@ -68,8 +71,76 @@ impl Sandbox for Wordle {
     }
 }
 
+
+struct WordRow {
+	word: String,
+}
+
+
+impl WordRow {
+
+    fn new(word: String) -> Self {
+        WordRow{word}
+    }
+
+    fn view(&mut self) -> Element<Message> {
+        // We use a column: a simple vertical layout
+        let size = 40;
+        let padding = 4;
+
+		let mut row = Row::new()
+			.align_items(Align::Center)
+			.spacing(padding);
+
+		for col_c in self.word.chars() {
+			let contain = Container::new(Text::new(col_c).size(30))
+				.style(match col_c {
+					'h' => style::Tile::Correct,
+					'e' => style::Tile::WrongPlace,
+					'l' => style::Tile::NotFound,
+					'o' => style::Tile::NotEntered,
+					_ => style::Tile::Empty,
+				})
+				.center_x()
+				.center_y()
+				.width(Length::Units(size))
+				.height(Length::Units(size)) ;
+			row = row.push(contain);
+		}
+
+		row.into()
+	}
+
+    fn update(&mut self, message: Message) {}
+
+    fn background_color(&self) -> Color {
+        Color::from_rgb8(18, 18, 19)
+    }
+}
+
+
 mod style {
     use iced::{container, Background, Color};
+
+	pub enum Theme {
+		Light,
+		Dark,
+	}
+
+	impl container::StyleSheet for Theme {
+		fn style(&self) -> container::Style {
+			let color = match *self {
+				Theme::Light => Color::WHITE,
+				Theme::Dark => Color::from_rgb8(0x12, 0x12, 0x13),
+			};
+
+			container::Style{
+				background: Some(Background::Color(color)),
+
+				..container::Style::default()
+			}
+		}
+	}
 
     pub enum Tile {
         Empty,
