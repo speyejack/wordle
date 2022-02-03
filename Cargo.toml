@@ -10,6 +10,9 @@ owo-colors="3.2.0"
 anyhow = "*"
 rand = "*"
 indicatif = "0.16.2"
+iced = "*"
+getrandom = {features=["js"], version="*"}
+wasm-bindgen = "0.2.79"
 
 [[bin]]
 name = "jordle"
@@ -18,3 +21,7 @@ path = "src/user_game.rs"
 [[bin]]
 name = "solver"
 path = "src/auto.rs"
+
+[[bin]]
+name = "gui"
+path = "src/gui.rs"
