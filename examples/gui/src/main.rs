@@ -13,7 +13,6 @@ struct WordleGui {
     words: Vec<WordRow>,
     guess_text: String,
     game_state: GameGuiState,
-	button_state: button::State,
 }
 
 #[derive(Debug, Clone)]
