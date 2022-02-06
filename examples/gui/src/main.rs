@@ -1,4 +1,3 @@
-use rand::prelude::*;
 use std::{collections::HashSet, time::Duration};
 
 use iced::{
@@ -54,7 +53,6 @@ impl Sandbox for WordleGui {
     fn view(&mut self) -> Element<Message> {
         // We use a column: a simple vertical layout
 
-        let size = 40;
         let padding = 4;
         let mut column = Column::new()
             .align_items(Align::Center)
