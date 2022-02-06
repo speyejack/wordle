@@ -1,5 +1,4 @@
-mod logic;
-use logic::game::*;
+use jordle::logic::game::*;
 
 use std::{collections::HashSet, io::stdin, time::Instant};
 

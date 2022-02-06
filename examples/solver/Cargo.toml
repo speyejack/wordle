@@ -1,21 +1,12 @@
 [package]
-name = "jordle"
+name = "solver"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+jordle = {path="../.."}
+indicatif = "^0.16.2"
 anyhow = "*"
 rand = "*"
-
-[lib]
-name = "jordle"
-path = "src/lib.rs"
-
-[workspace]
-members = [
-	"examples/gui",
-	"examples/term",
-	"examples/solver"
-]

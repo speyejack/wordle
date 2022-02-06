@@ -111,8 +111,8 @@ pub fn guess_word(
         return Ok(WordValidation::Valid(GuessResult::Correct, matches));
     }
 
-    // let mutator = NoopMutator::default();
     let mutator = NoopMutator::default();
+    // let mutator = StepProbMutator::default();
 
     let matches: Vec<CharMatch> = matches
         .into_iter()

@@ -1,10 +1,7 @@
-mod logic;
-mod solver;
-
-use logic::game::*;
-use solver::filters::*;
-use solver::scoring::*;
-use solver::*;
+use jordle::logic::game::*;
+use jordle::solver::filters::*;
+use jordle::solver::scoring::*;
+use jordle::solver::*;
 
 use anyhow::Result;
 use indicatif::ProgressBar;
