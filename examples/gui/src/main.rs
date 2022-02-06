@@ -3,7 +3,6 @@ use iced::{
     Settings, Space, Text, TextInput,
 };
 use jordle::logic::{CharAlignment, CharMatch, GuessResult, WordValidation, Wordle};
-use std::{collections::HashSet, time::Duration};
 
 fn main() -> iced::Result {
     WordleGui::run(Settings::default())
@@ -14,6 +13,7 @@ struct WordleGui {
     words: Vec<WordRow>,
     guess_text: String,
     game_state: GameGuiState,
+	button_state: button::State,
 }
 
 #[derive(Debug, Clone)]
@@ -105,10 +105,6 @@ impl Sandbox for WordleGui {
                     if let GuessResult::Correct = guess_result {
                         self.game_state = GameGuiState::Finished(button::State::new())
                     }
-                    // self.running = match guess_result {
-                    // 	GuessResult::Correct => false,
-                    // 	GuessResult::Wrong => true,
-                    // }
                 }
                 self.guess_text = String::default();
             }
@@ -161,6 +157,7 @@ impl WordRow {
 mod style {
     use iced::{container, Background, Color};
 
+	#[allow(dead_code)]
     pub enum Theme {
         Light,
         Dark,
@@ -181,6 +178,7 @@ mod style {
         }
     }
 
+	#[allow(dead_code)]
     pub enum Tile {
         Empty,
         NotEntered,
@@ -202,11 +200,10 @@ mod style {
                     Tile::Correct => Some(Background::Color(Color::from_rgb8(0x53, 0x8d, 0x4e))),
                 },
                 border_radius: 1.0,
-                border_width: 100.0,
-                // border_width: match self {
-                //     Tile::Empty | Tile::NotEntered => 2000.0,
-                //     _ => 1000.0,
-                // },
+                border_width: match self {
+                    Tile::Empty | Tile::NotEntered => 2.0,
+                    _ => 0.0,
+                },
                 border_color: match self {
                     Tile::NotEntered => Color::from_rgb8(0x56, 0x57, 0x58),
                     _ => grey_border,

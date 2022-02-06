@@ -22,7 +22,6 @@ impl Default for GameParameters {
 				.map(|x| x.to_string())
 		};
 
-
         let answer_wordlist: Vec<String> = include_str!("../../words/answers.txt")
             .lines()
             .filter_map(filter_words)
