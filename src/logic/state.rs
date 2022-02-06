@@ -1,4 +1,3 @@
-use rand::prelude::IteratorRandom;
 use rand::prelude::ThreadRng;
 use std::time::Instant;
 
@@ -13,7 +12,7 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new_game(params: &GameParameters, mut rng: ThreadRng, target: String) -> Self {
+    pub fn new_game(rng: ThreadRng, target: String) -> Self {
         Self {
             prev_guesses: Vec::new(),
             target_word: target,
@@ -21,6 +20,4 @@ impl GameState {
             rng,
         }
     }
-
-    pub fn check_used_word(word: &str) {}
 }

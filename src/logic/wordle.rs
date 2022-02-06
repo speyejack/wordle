@@ -1,6 +1,6 @@
 use super::types::StringMatch;
 use super::*;
-use super::{mutator::Mutator, params::GameParameters, state::GameState, CharMatch};
+use super::{params::GameParameters, state::GameState, CharMatch};
 use rand::prelude::IteratorRandom;
 use rand::rngs::ThreadRng;
 use rand::thread_rng;
@@ -50,14 +50,14 @@ impl Wordle {
 
     pub fn new_game(params: GameParameters, mut rng: ThreadRng, target: String) -> Self {
         Self {
-            state: GameState::new_game(&params, rng, target),
+            state: GameState::new_game(rng, target),
             params,
         }
     }
 
     pub fn restart(self) -> Self {
         let params = self.params;
-        let mut rng = self.state.rng;
+        let rng = self.state.rng;
 
         Self::new_random_game(params, rng)
     }
@@ -66,7 +66,7 @@ impl Wordle {
         let words = &self.params.guess_wordlist;
         let target_word = self.state.target_word.as_str();
         let range = self.params.word_size;
-        let mut rng = &mut self.state.rng;
+        let rng = &mut self.state.rng;
 
         if guessed_word.len() < range.0 || guessed_word.len() > range.1 {
             return WordValidation::Invalid(
