@@ -6,6 +6,7 @@ use iced::Column;
 use iced::Element;
 use iced::Align;
 use iced::button;
+use jordle::logic::types::StringMatch;
 use crate::Message;
 use crate::CharMatch;
 use crate::CharAlignment;
@@ -40,6 +41,16 @@ impl Keyboard {
 		}
 
 		col.into()
+	}
+
+	pub fn update(&mut self, c: &StringMatch) {
+		for tc in c {
+			for row in &mut self.rows {
+				if row.update(tc) {
+					break;
+				}
+			}
+		}
 	}
 }
 
@@ -78,5 +89,19 @@ impl KeyboardRow {
         }
 
         row.into()
+	}
+
+	pub fn update(&mut self, cmatch: &CharMatch) -> bool {
+		for rc in &mut self.row {
+			if rc.0.c == cmatch.c {
+				match rc.0.align {
+					CharAlignment::Exact => {},
+					CharAlignment::NotFound => {rc.0.align = cmatch.align},
+					CharAlignment::Misplaced => {rc.0.align = cmatch.align},
+				}
+				return true
+			}
+		}
+		return false
 	}
 }

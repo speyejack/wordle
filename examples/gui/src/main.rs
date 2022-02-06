@@ -104,6 +104,7 @@ impl Sandbox for WordleGui {
                 let result = self.wordle.guess(self.guess_text.as_str());
 
                 if let WordValidation::Valid(guess_result, matches) = result {
+					self.keyboard.update(&matches);
                     let row = WordRow::new(matches);
                     self.words.push(row);
 
