@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 jordle = {path="../.."}
-wasm-bindgen = "*"
-iced = {version="^0.3.0"}
+wasm-bindgen = "=0.2.69"
+iced = {version="=0.3.0"}
 getrandom = {features=["js"], version="*"}
 rand = "*"
 web-sys = {features=["console"],version="*"}
