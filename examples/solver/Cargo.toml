@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 jordle = {path="../.."}
 indicatif = "^0.16.2"
-anyhow = "*"
 rand = "*"

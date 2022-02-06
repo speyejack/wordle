@@ -1,30 +1,30 @@
-use std::{collections::HashSet, time::Duration};
 use rand::prelude::*;
-use jordle::logic;
+use std::{collections::HashSet, time::Duration};
 
 use iced::{
-    text_input, Align, Color, Column, Container, Element, Length, Row, Sandbox,
-    Settings, Space, Text, TextInput, button, Button,
+    button, text_input, Align, Button, Color, Column, Container, Element, Length, Row, Sandbox,
+    Settings, Space, Text, TextInput,
 };
-use logic::game::{gen_target_word, GameParameters, guess_word, CharMatch, WordValidation, GuessResult, CharAlignment};
+use jordle::logic::{
+    CharAlignment, CharMatch, GameParameters, GuessResult,
+    WordValidation, Wordle,
+};
 
 fn main() -> iced::Result {
-    Wordle::run(Settings::default())
+    WordleGui::run(Settings::default())
 }
 
-struct Wordle {
+struct WordleGui {
+	wordle: Wordle,
     words: Vec<WordRow>,
     guess_text: String,
-    target_word: String,
-    params: GameParameters,
-	rng: ThreadRng,
-	game_state: GameState,
+    game_state: GameGuiState,
 }
 
 #[derive(Debug, Clone)]
-pub enum GameState {
-	Running(text_input::State),
-	Finished(button::State)
+pub enum GameGuiState {
+    Running(text_input::State),
+    Finished(button::State),
 }
 
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ pub enum Message {
     RestartGame,
 }
 
-impl Sandbox for Wordle {
+impl Sandbox for WordleGui {
     type Message = Message;
 
     fn new() -> Self {
@@ -47,22 +47,19 @@ impl Sandbox for Wordle {
             .map(|x| x.to_string())
             .collect::<HashSet<String>>();
 
-		let target_word = answer_wordlist.lines().choose(&mut rng).unwrap().to_string();
+        let target_word = answer_wordlist
+            .lines()
+            .choose(&mut rng)
+            .unwrap()
+            .to_string();
 
-        let params = GameParameters {
-            tries: 10,
-            word_size: 5,
-            time_limit: Duration::from_secs(60 * 60),
-            guess_wordlist,
-        };
+		let wordle = Wordle::default();
 
-        Wordle {
+        WordleGui {
+			wordle,
             words: vec![],
-            game_state: GameState::Running(text_input::State::new()),
+            game_state: GameGuiState::Running(text_input::State::new()),
             guess_text: String::new(),
-			target_word,
-			params,
-			rng,
         }
     }
 
@@ -85,28 +82,24 @@ impl Sandbox for Wordle {
             column = column.push(wordrow.view())
         }
 
-		let footer: Element<Message> = match &mut self.game_state {
-			GameState::Running(text_state) => {
-				TextInput::new(
-					text_state,
-					"Guess...",
-					&self.guess_text,
-					Message::TextChanged,
-				)
-					.on_submit(Message::TextSubmitted)
-					.width(Length::Shrink)
-					.into()
-			}
-			GameState::Finished(state) => {
-				Button::new(state, Text::new("Restart"))
-					.on_press(Message::RestartGame)
-					.into()
-			}
-		};
+        let footer: Element<Message> = match &mut self.game_state {
+            GameGuiState::Running(text_state) => TextInput::new(
+                text_state,
+                "Guess...",
+                &self.guess_text,
+                Message::TextChanged,
+            )
+            .on_submit(Message::TextSubmitted)
+            .width(Length::Shrink)
+            .into(),
+            GameGuiState::Finished(state) => Button::new(state, Text::new("Restart"))
+                .on_press(Message::RestartGame)
+                .into(),
+        };
 
-		column = column
+        column = column
             .push(Space::new(Length::Fill, Length::FillPortion(1)))
-			.push(footer)
+            .push(footer)
             .push(Space::new(Length::Fill, Length::Units(40)));
 
         Container::new(column)
@@ -124,27 +117,23 @@ impl Sandbox for Wordle {
                 self.guess_text = string.to_lowercase().trim().to_string();
             }
             Message::TextSubmitted => {
-				let text = &self.guess_text;
-				let result = guess_word(&text,
-										&self.params.guess_wordlist,
-										&self.target_word, &mut self.rng, (5,5));
+				let result = self.wordle.guess(self.guess_text.as_str());
 
-				if let Ok(WordValidation::Valid(guess_result,
-												matches)) = result {
-					let row = WordRow::new(matches);
-					self.words.push(row);
+                if let WordValidation::Valid(guess_result, matches) = result {
+                    let row = WordRow::new(matches);
+                    self.words.push(row);
 
-					if let GuessResult::Correct = guess_result {
-						self.game_state = GameState::Finished(button::State::new())
-					}
-					// self.running = match guess_result {
-					// 	GuessResult::Correct => false,
-					// 	GuessResult::Wrong => true,
-					// }
-				}
+                    if let GuessResult::Correct = guess_result {
+                        self.game_state = GameGuiState::Finished(button::State::new())
+                    }
+                    // self.running = match guess_result {
+                    // 	GuessResult::Correct => false,
+                    // 	GuessResult::Wrong => true,
+                    // }
+                }
                 self.guess_text = String::default();
             }
-			Message::RestartGame => {}
+            Message::RestartGame => {}
         }
     }
 
@@ -173,12 +162,11 @@ impl WordRow {
             .spacing(padding);
 
         for char_match in &self.word {
-			let contain =
-				Container::new(Text::new(char_match.c).size(30))
-				.style(match &char_match.align {
+            let contain = Container::new(Text::new(char_match.c).size(30))
+                .style(match &char_match.align {
                     CharAlignment::Exact => style::Tile::Correct,
                     CharAlignment::Misplaced => style::Tile::WrongPlace,
-                    CharAlignment::NotFound  => style::Tile::NotFound,
+                    CharAlignment::NotFound => style::Tile::NotFound,
                 })
                 .center_x()
                 .center_y()

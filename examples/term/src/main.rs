@@ -1,5 +1,6 @@
-use jordle::logic::game::*;
+use jordle::logic::*;
 
+use std::time::Duration;
 use std::{collections::HashSet, io::stdin, time::Instant};
 
 use anyhow::Result;
@@ -8,40 +9,32 @@ use owo_colors::OwoColorize;
 use rand::Rng;
 
 fn main() -> Result<()> {
-    let mut rng = rand::thread_rng();
+    let rng = rand::thread_rng();
 
-    let answer_wordlist = load_wordlist("/home/jack/Documents/jordle/words/answers.txt", 5)?;
+    let params = GameParameters::default();
 
-    let params = setup_game(&answer_wordlist)?;
-
-    play_regular_game(params, &mut rng, &answer_wordlist)
+	let wordle = Wordle::new_random_game(params, rng);
+    play_regular_game(wordle)
 }
 
-fn play_regular_game(
-    params: GameParameters,
-    rng: &mut impl Rng,
-    answer_wordlist: &HashSet<String>,
-) -> Result<()> {
-    // println!("Shhhhh ;) : {}", &params.target_word);
+fn play_regular_game(mut wordle: Wordle) -> Result<()> {
+	let params = &wordle.params;
+	let time_limit = params.time_limit.clone().unwrap_or(Duration::from_secs(60 * 60));
+	let attempt_limit = params.tries.unwrap_or(100);
+	let start_time = wordle.state.start_time;
+
     println!(
         "You have {} tries and {} seconds to guess a {} letter word!",
-        params.tries,
-        params.time_limit.as_secs(),
-        params.word_size
+        attempt_limit,
+        time_limit.as_secs(),
+        params.word_size.0
     );
 
-    let target_word = gen_target_word(answer_wordlist, rng);
+    let mut attempt_number = 0;
 
-    let start_time = Instant::now();
-    let mut try_number = 0;
-
-    while try_number < params.tries {
-        let guess_result = guess_user_word(
-            &params.guess_wordlist,
-            &target_word,
-            rng,
-            (params.word_size, params.word_size),
-        )?;
+    while attempt_number < attempt_limit {
+		let guessed_word = get_user_guess()?;
+		let guess_result = wordle.guess(guessed_word.as_str());
 
         match guess_result {
             WordValidation::Valid(guess, matches) => {
@@ -54,37 +47,41 @@ fn play_regular_game(
                         println!("You guessed it!");
                         break;
                     }
-                    GuessResult::Wrong => try_number += 1,
+                    GuessResult::Wrong => attempt_number += 1,
                 }
             }
             WordValidation::Invalid(reason, _) => match reason {
                 InvalidationReason::WrongLength => {
                     println!("Invalid length, try again.");
-                }
+                },
                 InvalidationReason::UnknownWord => {
                     println!("Invalid word, try again.");
+                },
+                InvalidationReason::RepeatWord => {
+                    println!("Repeated guess, try again.");
                 }
             },
         }
 
         let current_dur = start_time.elapsed();
-        if current_dur >= params.time_limit {
+        if current_dur >= time_limit {
             println!("Out of time :(");
             break;
         }
-        let diff_dur = params.time_limit - current_dur;
+        let diff_dur = time_limit - current_dur;
 
         println!(
             "You have {} tries and {} seconds left before your final guess.",
-            params.tries - try_number,
+            attempt_limit - attempt_number,
             diff_dur.as_secs()
         )
     }
 
-    if try_number >= params.tries {
+    if attempt_number >= attempt_limit {
         println!("Sorry you ran out of guesses.");
     }
-    println!("The word was: {}", &target_word);
+
+    println!("The word was: {}", &wordle.state.target_word);
 
     Ok(())
 }
@@ -95,16 +92,6 @@ fn get_user_guess() -> Result<String> {
     let guessed_word = raw_input.trim().to_string();
 
     Ok(guessed_word)
-}
-
-fn guess_user_word(
-    words: &HashSet<String>,
-    target_word: &str,
-    rng: &mut impl Rng,
-    range: (usize, usize),
-) -> Result<WordValidation> {
-    let guessed_word = get_user_guess()?;
-    guess_word(&guessed_word, words, target_word, rng, range)
 }
 
 fn print_char(cmatch: &CharMatch) {

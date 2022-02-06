@@ -1,15 +1,16 @@
-use super::game::CharAlignment;
-use rand::Rng;
+use super::CharAlignment;
+use rand::{Rng, prelude::ThreadRng};
+
 
 pub trait Mutator {
-    fn mutate(&self, cmatch: CharAlignment, rng: &mut impl Rng) -> CharAlignment;
+    fn mutate(&self, cmatch: CharAlignment, rng: &mut ThreadRng) -> CharAlignment;
 }
 
 #[derive(Default)]
 pub struct NoopMutator {}
 
 impl Mutator for NoopMutator {
-    fn mutate(&self, cmatch: CharAlignment, _rng: &mut impl Rng) -> CharAlignment {
+    fn mutate(&self, cmatch: CharAlignment, _rng: &mut ThreadRng) -> CharAlignment {
         cmatch
     }
 }
@@ -32,16 +33,12 @@ impl StepProbMutator {
 
 impl Default for StepProbMutator {
     fn default() -> Self {
-        Self {
-            exact: 0.2,
-            misplaced: 0.4,
-            not_found: 0.2,
-        }
+		Self::new(0.2,0.4,0.2)
     }
 }
 
 impl Mutator for StepProbMutator {
-    fn mutate(&self, cmatch: CharAlignment, rng: &mut impl Rng) -> CharAlignment {
+    fn mutate(&self, cmatch: CharAlignment, rng: &mut ThreadRng) -> CharAlignment {
         let prob = match cmatch {
             CharAlignment::Exact => self.exact,
             CharAlignment::Misplaced => self.misplaced,

@@ -1,28 +1,21 @@
-use jordle::logic::game::*;
+use jordle::logic::*;
 use jordle::solver::filters::*;
 use jordle::solver::scoring::*;
 use jordle::solver::*;
 
-use anyhow::Result;
 use indicatif::ProgressBar;
-use rand::Rng;
 use std::collections::HashSet;
 
-fn main() -> Result<()> {
-    let mut rng = rand::thread_rng();
+fn main() {
+    let rng = rand::thread_rng();
 
-    let answer_wordlist = load_wordlist("/home/jack/Documents/jordle/words/answers.txt", 5)?;
+    let params = GameParameters::default();
 
-    let params = setup_game(&answer_wordlist)?;
-
-    play_auto_game(params, &mut rng, &answer_wordlist)
+	let wordle = Wordle::new_random_game(params, rng);
+    repeat_auto_game(wordle);
 }
 
-fn play_auto_game(
-    params: GameParameters,
-    rng: &mut impl Rng,
-    answer_wordlist: &HashSet<String>,
-) -> Result<()> {
+fn repeat_auto_game(mut wordle: Wordle) {
     let played_games = 1_000;
 
     let mut guess_count = 0;
@@ -30,13 +23,12 @@ fn play_auto_game(
 
     let bar = ProgressBar::new(played_games);
     for _ in 0..played_games {
-        let target_word = gen_target_word(answer_wordlist, rng);
-
-        let guesses = auto_game(&params, rng, answer_wordlist, &target_word)?;
+        let guesses = auto_game(&mut wordle);
         guess_count += guesses;
         let failed = guesses > 6;
         fail_count += if failed { 1 } else { 0 };
 
+		wordle = wordle.restart();
         bar.inc(1);
     }
     bar.finish();
@@ -47,17 +39,10 @@ fn play_auto_game(
         guess_count as f32 / played_games as f32,
         fail_count
     );
-
-    Ok(())
 }
 
-fn auto_game(
-    params: &GameParameters,
-    rng: &mut impl Rng,
-    answer_wordlist: &HashSet<String>,
-    target_word: &str,
-) -> Result<i32> {
-    let mut game_words = answer_wordlist.clone();
+fn auto_game(wordle: &mut Wordle) -> i32 {
+    let mut game_words = wordle.params.answer_wordlist.clone().into_iter().collect::<HashSet<_>>();
     let mut guess_count = 0;
 
     loop {
@@ -75,19 +60,13 @@ fn auto_game(
             .0
             .to_string();
 
-        let guess_result = guess_word(
-            &word,
-            &params.guess_wordlist,
-            target_word,
-            rng,
-            (params.word_size, params.word_size),
-        )?;
+		let guess_result = wordle.guess(&word);
         guess_count += 1;
 
         match guess_result {
             WordValidation::Valid(result, matches) => {
                 if let GuessResult::Correct = result {
-                    return Ok(guess_count);
+                    return guess_count;
                 }
 
                 let filter = PosFilterCriteria::from_matches(&matches);
