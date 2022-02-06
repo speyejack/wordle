@@ -37,12 +37,12 @@ fn main() {
 	match command.command {
 		Commands::Trial{count} => repeat_auto_game(wordle, count),
 		Commands::Target{target} => run_auto_game(wordle, target)
-
 	}
 }
 
 
 fn run_auto_game(mut wordle: Wordle, target: String) {
+	println!("Searching for word: {}\n", &target);
 	wordle.state.target_word = target;
 
     let mut game_words = wordle
