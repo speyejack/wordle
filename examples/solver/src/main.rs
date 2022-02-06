@@ -1,8 +1,8 @@
+use clap::{Parser, Subcommand};
 use jordle::logic::*;
 use jordle::solver::filters::*;
 use jordle::solver::scoring::*;
 use jordle::solver::*;
-use clap::{Parser, Subcommand};
 
 use indicatif::ProgressBar;
 use std::collections::HashSet;
@@ -10,40 +10,34 @@ use std::collections::HashSet;
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-	#[clap(subcommand)]
-	command: Commands
+    #[clap(subcommand)]
+    command: Commands,
 }
 
 #[derive(Subcommand)]
 enum Commands {
-	Trial{
-		count: usize,
-	},
+    Trial { count: usize },
 
-	Target {
-		target: String,
-	}
+    Target { target: String },
 }
 
-
 fn main() {
-	let command = Cli::parse();
+    let command = Cli::parse();
     let rng = rand::thread_rng();
 
     let params = GameParameters::default();
 
     let wordle = Wordle::new_random_game(params, rng);
 
-	match command.command {
-		Commands::Trial{count} => repeat_auto_game(wordle, count),
-		Commands::Target{target} => run_auto_game(wordle, target)
-	}
+    match command.command {
+        Commands::Trial { count } => repeat_auto_game(wordle, count),
+        Commands::Target { target } => run_auto_game(wordle, target),
+    }
 }
 
-
 fn run_auto_game(mut wordle: Wordle, target: String) {
-	println!("Searching for word: {}\n", &target);
-	wordle.state.target_word = target;
+    println!("Searching for word: {}\n", &target);
+    wordle.state.target_word = target;
 
     let mut game_words = wordle
         .params
@@ -53,16 +47,16 @@ fn run_auto_game(mut wordle: Wordle, target: String) {
         .collect::<HashSet<_>>();
 
     loop {
-		let (results, word) = take_guess(&mut wordle, game_words);
-		println!("Guessed: {}", word);
-		if let Some(new_words) =  results {
-			game_words = new_words;
-		} else {
-			break;
-		}
+        let (results, word) = take_guess(&mut wordle, game_words);
+        println!("Guessed: {}", word);
+        if let Some(new_words) = results {
+            game_words = new_words;
+        } else {
+            break;
+        }
     }
 
-	println!("Solved!")
+    println!("Solved!")
 }
 
 fn repeat_auto_game(mut wordle: Wordle, played_games: usize) {
@@ -99,20 +93,22 @@ fn auto_game(wordle: &mut Wordle) -> i32 {
     let mut guess_count = 0;
 
     loop {
-		guess_count +=1;
-		let (results, _) = take_guess(wordle, game_words);
-		if let Some(new_words) =  results {
-			game_words = new_words;
-		} else {
-			break;
-		}
+        guess_count += 1;
+        let (results, _) = take_guess(wordle, game_words);
+        if let Some(new_words) = results {
+            game_words = new_words;
+        } else {
+            break;
+        }
     }
 
-	guess_count
+    guess_count
 }
 
-
-fn take_guess(wordle: &mut Wordle, game_words: HashSet<String>) -> (Option<HashSet<String>>, String) {
+fn take_guess(
+    wordle: &mut Wordle,
+    game_words: HashSet<String>,
+) -> (Option<HashSet<String>>, String) {
     let counts = count_letter(&game_words);
     let word = game_words
         .iter()
@@ -141,7 +137,7 @@ fn take_guess(wordle: &mut Wordle, game_words: HashSet<String>) -> (Option<HashS
                 .filter(|word| filter.check(word))
                 .collect();
 
-            return (Some(new_words), word)
+            return (Some(new_words), word);
         }
         WordValidation::Invalid(_, _) => unreachable!(),
     }
