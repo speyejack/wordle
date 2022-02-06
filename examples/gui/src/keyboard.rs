@@ -11,6 +11,7 @@ use crate::Message;
 use crate::CharMatch;
 use crate::CharAlignment;
 use crate::style;
+use crate::style::Tile;
 
 
 pub struct Keyboard {
@@ -55,13 +56,14 @@ impl Keyboard {
 }
 
 struct KeyboardRow {
-	row: Vec<(CharMatch, button::State)>
+	row: Vec<(char, Tile, button::State)>
 }
 
 impl KeyboardRow {
 	fn new(row: &str) -> Self {
 		Self{
-			row: row.chars().map(|c| (CharMatch{c, align: CharAlignment::NotFound}, button::State::new())).collect(),
+			row: row.chars().map(|c| (c, Tile::Pending,
+									  button::State::new())).collect(),
 		}
 	}
 
@@ -74,17 +76,15 @@ impl KeyboardRow {
             .width(Length::Shrink)
             .spacing(padding);
 
-        for (char_match, button_state) in &mut self.row {
-            let contain = Button::new(button_state, Text::new(char_match.c).size(30))
-                .style(match &char_match.align {
-                    CharAlignment::Exact => style::Tile::Correct,
-                    CharAlignment::Misplaced => style::Tile::WrongPlace,
-                    CharAlignment::NotFound => style::Tile::NotFound,
-                })
-                // .center_x()
-                // .center_y()
-                .width(Length::Units(size))
-                .height(Length::Units(size));
+        for (c, tile, button_state) in &mut self.row {
+            let contain = Button::new(button_state,
+									  Text::new(*c)
+									  .size(30)
+									  .horizontal_alignment(iced::HorizontalAlignment::Center)
+			)
+				.style(*tile)
+				.width(Length::Units(size))
+				.height(Length::Units(size));
             row = row.push(contain);
         }
 
@@ -92,12 +92,11 @@ impl KeyboardRow {
 	}
 
 	pub fn update(&mut self, cmatch: &CharMatch) -> bool {
-		for rc in &mut self.row {
-			if rc.0.c == cmatch.c {
-				match rc.0.align {
-					CharAlignment::Exact => {},
-					CharAlignment::NotFound => {rc.0.align = cmatch.align},
-					CharAlignment::Misplaced => {rc.0.align = cmatch.align},
+		for (c, tile, _) in &mut self.row {
+			if *c == cmatch.c {
+				match tile {
+					Tile::Correct => {},
+					_ => {*tile = cmatch.align.into()}
 				}
 				return true
 			}
