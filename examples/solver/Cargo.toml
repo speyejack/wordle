@@ -9,3 +9,4 @@ edition = "2021"
 jordle = {path="../.."}
 indicatif = "^0.16.2"
 rand = "*"
+clap = {version="^3.0", features=["derive"]}
