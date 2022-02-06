@@ -1,9 +1,9 @@
+pub mod mutator;
 pub mod params;
 pub mod state;
-pub mod wordle;
 pub mod types;
-pub mod mutator;
+pub mod wordle;
 
-pub use types::{CharMatch, CharAlignment};
-pub use wordle::{Wordle, WordValidation, GuessResult, InvalidationReason};
 pub use params::GameParameters;
+pub use types::{CharAlignment, CharMatch};
+pub use wordle::{GuessResult, InvalidationReason, WordValidation, Wordle};

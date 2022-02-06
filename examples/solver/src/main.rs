@@ -11,7 +11,7 @@ fn main() {
 
     let params = GameParameters::default();
 
-	let wordle = Wordle::new_random_game(params, rng);
+    let wordle = Wordle::new_random_game(params, rng);
     repeat_auto_game(wordle);
 }
 
@@ -28,7 +28,7 @@ fn repeat_auto_game(mut wordle: Wordle) {
         let failed = guesses > 6;
         fail_count += if failed { 1 } else { 0 };
 
-		wordle = wordle.restart();
+        wordle = wordle.restart();
         bar.inc(1);
     }
     bar.finish();
@@ -42,7 +42,12 @@ fn repeat_auto_game(mut wordle: Wordle) {
 }
 
 fn auto_game(wordle: &mut Wordle) -> i32 {
-    let mut game_words = wordle.params.answer_wordlist.clone().into_iter().collect::<HashSet<_>>();
+    let mut game_words = wordle
+        .params
+        .answer_wordlist
+        .clone()
+        .into_iter()
+        .collect::<HashSet<_>>();
     let mut guess_count = 0;
 
     loop {
@@ -60,7 +65,7 @@ fn auto_game(wordle: &mut Wordle) -> i32 {
             .0
             .to_string();
 
-		let guess_result = wordle.guess(&word);
+        let guess_result = wordle.guess(&word);
         guess_count += 1;
 
         match guess_result {

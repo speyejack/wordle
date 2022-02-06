@@ -1,6 +1,6 @@
-use std::time::Instant;
 use rand::prelude::IteratorRandom;
 use rand::prelude::ThreadRng;
+use std::time::Instant;
 
 use super::params::GameParameters;
 use super::types::StringMatch;
@@ -13,16 +13,14 @@ pub struct GameState {
 }
 
 impl GameState {
-	pub fn new_game(params: &GameParameters, mut rng: ThreadRng, target: String) -> Self {
-		Self {
-			prev_guesses: Vec::new(),
-			target_word: target,
-			start_time: Instant::now(),
-			rng,
-		}
-	}
+    pub fn new_game(params: &GameParameters, mut rng: ThreadRng, target: String) -> Self {
+        Self {
+            prev_guesses: Vec::new(),
+            target_word: target,
+            start_time: Instant::now(),
+            rng,
+        }
+    }
 
-	pub fn check_used_word(word: &str) {
-
-	}
+    pub fn check_used_word(word: &str) {}
 }

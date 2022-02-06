@@ -1,6 +1,5 @@
 use super::CharAlignment;
-use rand::{Rng, prelude::ThreadRng};
-
+use rand::{prelude::ThreadRng, Rng};
 
 pub trait Mutator {
     fn mutate(&self, cmatch: CharAlignment, rng: &mut ThreadRng) -> CharAlignment;
@@ -33,7 +32,7 @@ impl StepProbMutator {
 
 impl Default for StepProbMutator {
     fn default() -> Self {
-		Self::new(0.2,0.4,0.2)
+        Self::new(0.2, 0.4, 0.2)
     }
 }
 

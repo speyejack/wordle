@@ -8,7 +8,7 @@ pub struct GameParameters {
     pub answer_wordlist: Vec<String>,
     pub word_size: (usize, usize),
 
-	pub mutator: Box<dyn Mutator>,
+    pub mutator: Box<dyn Mutator>,
     pub tries: Option<i32>,
     pub time_limit: Option<Duration>,
 }
@@ -40,7 +40,7 @@ impl Default for GameParameters {
             answer_wordlist,
             word_size,
 
-			mutator: Box::new(NoopMutator{}),
+            mutator: Box::new(NoopMutator {}),
             tries: Some(6),
             time_limit: None,
         }

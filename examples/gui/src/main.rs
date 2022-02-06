@@ -6,8 +6,7 @@ use iced::{
     Settings, Space, Text, TextInput,
 };
 use jordle::logic::{
-    CharAlignment, CharMatch, GameParameters, GuessResult,
-    WordValidation, Wordle,
+    CharAlignment, CharMatch, GameParameters, GuessResult, WordValidation, Wordle,
 };
 
 fn main() -> iced::Result {
@@ -15,7 +14,7 @@ fn main() -> iced::Result {
 }
 
 struct WordleGui {
-	wordle: Wordle,
+    wordle: Wordle,
     words: Vec<WordRow>,
     guess_text: String,
     game_state: GameGuiState,
@@ -38,25 +37,10 @@ impl Sandbox for WordleGui {
     type Message = Message;
 
     fn new() -> Self {
-        let mut rng = rand::thread_rng();
-        let answer_wordlist = include_str!("../../../words/answers.txt");
-
-        let guess_wordlist = include_str!("../../../words/guesses.txt")
-            .lines()
-            .filter(|x| x.len() == 5)
-            .map(|x| x.to_string())
-            .collect::<HashSet<String>>();
-
-        let target_word = answer_wordlist
-            .lines()
-            .choose(&mut rng)
-            .unwrap()
-            .to_string();
-
-		let wordle = Wordle::default();
+        let wordle = Wordle::default();
 
         WordleGui {
-			wordle,
+            wordle,
             words: vec![],
             game_state: GameGuiState::Running(text_input::State::new()),
             guess_text: String::new(),
@@ -117,7 +101,7 @@ impl Sandbox for WordleGui {
                 self.guess_text = string.to_lowercase().trim().to_string();
             }
             Message::TextSubmitted => {
-				let result = self.wordle.guess(self.guess_text.as_str());
+                let result = self.wordle.guess(self.guess_text.as_str());
 
                 if let WordValidation::Valid(guess_result, matches) = result {
                     let row = WordRow::new(matches);
