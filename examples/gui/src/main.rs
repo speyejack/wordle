@@ -1,12 +1,11 @@
-use std::{collections::HashSet, time::Duration};
-
 use iced::{
     button, text_input, Align, Button, Color, Column, Container, Element, Length, Row, Sandbox,
     Settings, Space, Text, TextInput,
 };
 use jordle::logic::{
-    CharAlignment, CharMatch, GameParameters, GuessResult, WordValidation, Wordle,
+    CharAlignment, CharMatch, GuessResult, WordValidation, Wordle,
 };
+use std::{collections::HashSet, time::Duration};
 
 fn main() -> iced::Result {
     WordleGui::run(Settings::default())
