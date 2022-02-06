@@ -83,6 +83,7 @@ impl Sandbox for WordleGui {
         column = column
             .push(Space::new(Length::Fill, Length::FillPortion(1)))
             .push(footer)
+            .push(Space::new(Length::Fill, Length::Units(20)))
             .push(self.keyboard.view())
             .push(Space::new(Length::Fill, Length::Units(40)));
 

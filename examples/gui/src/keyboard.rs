@@ -77,11 +77,11 @@ impl KeyboardRow {
             .spacing(padding);
 
         for (c, tile, button_state) in &mut self.row {
-            let contain = Button::new(button_state,
-									  Text::new(*c)
-									  .size(30)
-									  .horizontal_alignment(iced::HorizontalAlignment::Center)
-			)
+            let contain = Button::new(
+				button_state,
+				Text::new(*c)
+					.size(30)
+					.horizontal_alignment(iced::HorizontalAlignment::Center))
 				.style(*tile)
 				.width(Length::Units(size))
 				.height(Length::Units(size));
