@@ -83,6 +83,7 @@ impl KeyboardRow {
 					.size(30)
 					.horizontal_alignment(iced::HorizontalAlignment::Center))
 				.style(*tile)
+                .on_press(Message::KeyboardButton(*c))
 				.width(Length::Units(size))
 				.height(Length::Units(size));
             row = row.push(contain);

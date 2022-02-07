@@ -6,6 +6,7 @@ use iced::{
     Settings, Space, Text, TextInput,
 };
 use jordle::logic::{CharAlignment, CharMatch, GuessResult, WordValidation, Wordle};
+use style::Tile;
 
 fn main() -> iced::Result {
     WordleGui::run(Settings::default())
@@ -28,6 +29,7 @@ pub enum GameGuiState {
 #[derive(Debug, Clone)]
 pub enum Message {
     TextChanged(String),
+    KeyboardButton(char),
     TextSubmitted,
     RestartGame,
 }
@@ -65,7 +67,16 @@ impl Sandbox for WordleGui {
             column = column.push(wordrow.view())
         }
 
-        let footer: Element<Message> = match &mut self.game_state {
+		let guess_text = format!("{:width$}", self.guess_text,
+								 width=self.wordle.params.word_size.0);
+
+		column = column.push(WordRow::render(guess_text.chars().map(|x| (x, match x {
+			' ' => Tile::Empty,
+			_ => Tile::Pending
+		})).collect()));
+
+
+		let footer: Element<Message> = match &mut self.game_state {
             GameGuiState::Running(text_state) => TextInput::new(
                 text_state,
                 "Guess...",
@@ -101,6 +112,7 @@ impl Sandbox for WordleGui {
             Message::TextChanged(string) => {
                 self.guess_text = string.to_lowercase().trim().to_string();
             }
+
             Message::TextSubmitted => {
                 let result = self.wordle.guess(self.guess_text.as_str());
 
@@ -115,6 +127,11 @@ impl Sandbox for WordleGui {
                 }
                 self.guess_text = String::default();
             }
+
+			Message::KeyboardButton(c) => {
+				self.guess_text.push(c);
+			}
+
             Message::RestartGame => {}
         }
     }
@@ -134,6 +151,12 @@ impl WordRow {
     }
 
     fn view(&mut self) -> Element<Message> {
+		let matches = self.word.iter().map(|x| (x.c, x.align.into())).collect();
+
+		WordRow::render(matches)
+    }
+
+	fn render(matches: Vec<(char, Tile)>) -> Element<'static, Message> {
         // We use a column: a simple vertical layout
         let size = 45;
         let padding = 4;
@@ -143,13 +166,9 @@ impl WordRow {
             .width(Length::Shrink)
             .spacing(padding);
 
-        for char_match in &self.word {
-            let contain = Container::new(Text::new(char_match.c).size(30))
-                .style(match &char_match.align {
-                    CharAlignment::Exact => style::Tile::Correct,
-                    CharAlignment::Misplaced => style::Tile::WrongPlace,
-                    CharAlignment::NotFound => style::Tile::NotFound,
-                })
+        for (c, tile) in matches {
+            let contain = Container::new(Text::new(c).size(30))
+                .style(tile)
                 .center_x()
                 .center_y()
                 .width(Length::Units(size))
@@ -158,6 +177,5 @@ impl WordRow {
         }
 
         row.into()
-    }
+	}
 }
-

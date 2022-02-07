@@ -102,6 +102,7 @@ impl Wordle {
 }
 
 fn match_word(target: &str, guess: &str) -> StringMatch {
+	// TODO Adapt to use triple arrays
     target
         .chars()
         .zip(guess.chars())
