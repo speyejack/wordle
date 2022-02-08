@@ -48,7 +48,7 @@ impl Wordle {
         Self::new_game(params, rng, target)
     }
 
-    pub fn new_game(params: GameParameters, mut rng: ThreadRng, target: String) -> Self {
+    pub fn new_game(params: GameParameters, rng: ThreadRng, target: String) -> Self {
         Self {
             state: GameState::new_game(rng, target),
             params,
