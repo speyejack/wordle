@@ -78,7 +78,13 @@ impl Wordle {
                 InvalidationReason::UnknownWord,
                 guessed_word.to_string(),
             );
-        }
+        } else if self.state.prev_guesses.iter().map(|prev| prev.iter().zip(guessed_word.chars()).all(|(pm, c)| pm.c == c)).any(|x| x) {
+            return WordValidation::Invalid(
+                InvalidationReason::RepeatWord,
+                guessed_word.to_string(),
+            );
+
+		}
 
         let matches = match_word(target_word, guessed_word);
         self.state.prev_guesses.push(matches.clone());
