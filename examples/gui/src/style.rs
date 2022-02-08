@@ -16,6 +16,8 @@ impl container::StyleSheet for Theme {
 		};
 
 		container::Style {
+
+			text_color: Some(Color::WHITE),
 			background: Some(Background::Color(color)),
 
 			..container::Style::default()
