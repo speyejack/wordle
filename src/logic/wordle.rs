@@ -102,22 +102,26 @@ impl Wordle {
 }
 
 fn match_word(target: &str, guess: &str) -> StringMatch {
-	// TODO Adapt to use triple arrays
-    target
-        .chars()
-        .zip(guess.chars())
-        .map(|(t, g)| {
-            let align = if t == g {
-                CharAlignment::Exact
-            } else if target.contains(g) {
-                CharAlignment::Misplaced
-            } else {
-                CharAlignment::NotFound
-            };
+	let (mut target_used, mut matches): (Vec<bool>, Vec<_>) = target.chars().zip(guess.chars())
+		.map(|(tc, gc)| if tc == gc {
+			(true, CharMatch{c: gc, align: CharAlignment::Exact})
+		} else {
+			(false, CharMatch{c: gc, align: CharAlignment::NotFound})
+		}).unzip();
 
-            CharMatch { c: g, align }
-        })
-        .collect()
+
+	matches.iter_mut().filter(|x| matches!(x.align, CharAlignment::NotFound))
+		.for_each(|x|
+			 for (has_match, tc) in target_used.iter_mut().zip(target.chars()).filter(|x| !*x.0) {
+				 if x.c == tc {
+					 *has_match = true;
+					 x.align = CharAlignment::Misplaced;
+					 break
+				 }
+			 }
+		);
+
+	matches
 }
 
 impl Default for Wordle {
