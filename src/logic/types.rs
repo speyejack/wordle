@@ -15,7 +15,7 @@ pub struct CharMatch {
 
 fn matches_str(smatch: &StringMatch, other: &str) -> bool {
     smatch
-        .iter()
-        .zip(other.chars())
+		.iter()
+		.zip(other.chars())
         .all(|(cmatch, c)| c == cmatch.c)
 }

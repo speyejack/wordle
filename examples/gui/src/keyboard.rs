@@ -9,8 +9,6 @@ use iced::button;
 use jordle::logic::types::StringMatch;
 use crate::Message;
 use crate::CharMatch;
-use crate::CharAlignment;
-use crate::style;
 use crate::style::Tile;
 
 

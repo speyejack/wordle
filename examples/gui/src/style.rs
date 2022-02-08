@@ -2,6 +2,7 @@
 use iced::{container, button, Background, Color};
 use jordle::logic::CharAlignment;
 
+
 #[allow(dead_code)]
 pub enum Theme {
 	Light,
