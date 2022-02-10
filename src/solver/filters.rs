@@ -1,5 +1,4 @@
-use crate::logic::CharAlignment;
-use crate::logic::CharMatch;
+use crate::logic::{CharAlignment, CharMatch};
 
 pub trait FilterCriteria {
     fn from_matches(matches: &[CharMatch]) -> Self;

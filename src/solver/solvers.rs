@@ -1,10 +1,15 @@
+use crate::logic::CharMatch;
+use std::collections::HashSet;
 
-type Guess = String;
+pub type Guess = String;
+pub type SolverWordList = HashSet<String>;
 
-trait Solver {
-	fn load_wordlist(wordlist:HashMap<String>) -> Self;
-	fn narrow_guess(&mut self, guess_result: &[CharMatch]) -> Guess;
+pub trait Solver {
 	fn guess(&self) -> Guess;
+	fn narrow_words(&mut self, guess_result: &[CharMatch]);
 
-	fn narrow_results(&mut self, guess_result: &[CharMatch]);
+	fn narrow_then_guess(&mut self, guess_result: &[CharMatch]) -> Guess {
+		self.narrow_words(guess_result);
+		self.guess()
+	}
 }
