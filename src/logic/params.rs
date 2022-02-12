@@ -9,7 +9,7 @@ pub struct GameParameters {
     pub word_size: (usize, usize),
 
     pub mutator: Box<dyn Mutator>,
-    pub tries: Option<i32>,
+    pub tries: Option<usize>,
     pub time_limit: Option<Duration>,
 }
 

@@ -2,6 +2,7 @@ use rand::prelude::ThreadRng;
 use std::time::Instant;
 
 use super::types::StringMatch;
+use super::params::GameParameters;
 
 pub struct GameState {
     pub prev_guesses: Vec<StringMatch>,
@@ -11,11 +12,11 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new_game(rng: ThreadRng, target: String) -> Self {
+    pub fn new_game(params: &GameParameters, rng: ThreadRng, target: String) -> Self {
         Self {
             prev_guesses: Vec::new(),
             target_word: target,
-            start_time: None,
+            start_time: params.time_limit.map(|_| Instant::now()),
             rng,
         }
     }

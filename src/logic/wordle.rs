@@ -1,4 +1,4 @@
-use super::types::StringMatch;
+use super::types::{StringMatch, matches_str};
 use super::*;
 use super::{params::GameParameters, state::GameState, CharMatch};
 use rand::prelude::IteratorRandom;
@@ -25,10 +25,10 @@ pub enum WordValidation {
 }
 
 #[derive(Debug)]
-enum GameEndTriggers {
+pub enum GameEndTriggers {
     Timeout,
     NoTriesLeft,
-    Finished,
+	StillPlaying,
 }
 
 pub struct Wordle {
@@ -48,9 +48,25 @@ impl Wordle {
         Self::new_game(params, rng, target)
     }
 
+	pub fn check_state(&self) -> GameEndTriggers {
+		let time_expired = self.params.time_limit.map(|dur| self.state.start_time.map(|start| dur < start.elapsed())).flatten().unwrap_or(false);
+
+		if time_expired {
+			return GameEndTriggers::Timeout;
+		}
+
+		let no_tries_left = self.params.tries.map(|x| x >= self.state.prev_guesses.len()).unwrap_or(false);
+
+		if no_tries_left {
+			return GameEndTriggers::NoTriesLeft;
+		}
+
+		GameEndTriggers::StillPlaying
+	}
+
     pub fn new_game(params: GameParameters, rng: ThreadRng, target: String) -> Self {
         Self {
-            state: GameState::new_game(rng, target),
+            state: GameState::new_game(&params, rng, target),
             params,
         }
     }
@@ -78,7 +94,7 @@ impl Wordle {
                 InvalidationReason::UnknownWord,
                 guessed_word.to_string(),
             );
-        } else if self.state.prev_guesses.iter().map(|prev| prev.iter().zip(guessed_word.chars()).all(|(pm, c)| pm.c == c)).any(|x| x) {
+        } else if self.state.prev_guesses.iter().any(|old_matches| matches_str(old_matches, guessed_word)) {
             return WordValidation::Invalid(
                 InvalidationReason::RepeatWord,
                 guessed_word.to_string(),

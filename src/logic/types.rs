@@ -13,7 +13,7 @@ pub struct CharMatch {
     pub align: CharAlignment,
 }
 
-fn matches_str(smatch: &StringMatch, other: &str) -> bool {
+pub fn matches_str(smatch: &StringMatch, other: &str) -> bool {
     smatch
 		.iter()
 		.zip(other.chars())
