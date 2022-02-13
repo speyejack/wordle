@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 jordle = {path="../.."}
 wasm-bindgen = "0.2.79"
-iced = {version="=0.3.0", default-features = false}
+iced = {git="https://github.com/iced-rs/iced", rev="adce9e0421"}
 getrandom = {features=["js"], version="*"}
 rand = "*"
 web-sys = {features=["console"],version="*"}
