@@ -3,7 +3,7 @@ mod style;
 
 use keyboard::Keyboard;
 use iced::{
-	button, text_input, Align, Button, Color, Column, Container, Element, Length, Row, Sandbox,
+	button, text_input, Alignment, Button, Color, Column, Container, Element, Length, Row, Sandbox,
 	Settings, Space, Text, TextInput, container
 };
 use jordle::logic::{CharMatch, GuessResult, WordValidation, Wordle, mutator::{NoopMutator, StepProbMutator}};
@@ -106,7 +106,7 @@ impl Sandbox for WordleGui {
 
 		let padding = 4;
 		let mut column = Column::new()
-			.align_items(Align::Center)
+			.align_items(Alignment::Center)
 			.spacing(padding)
 			.height(Length::Fill)
 			.push(title)
@@ -131,7 +131,7 @@ impl Sandbox for WordleGui {
 		let next_button = Button::new(&mut self.next_button, Text::new("Next"))
 			.on_press(Message::RestartGame(self.current_varient.next_varient()));
 
-		let mut footer = Row::new().align_items(Align::Center);
+		let mut footer = Row::new().align_items(Alignment::Center);
 		footer = footer
 			.push(reset_button)
 			.push(Space::new(Length::Units(4), Length::Fill));
@@ -226,7 +226,7 @@ impl WordRow {
 		let padding = 4;
 
 		let mut row = Row::new()
-			.align_items(Align::Center)
+			.align_items(Alignment::Center)
 			.width(Length::Shrink)
 			.spacing(padding);
 

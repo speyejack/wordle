@@ -4,7 +4,7 @@ use iced::Text;
 use iced::Row;
 use iced::Column;
 use iced::Element;
-use iced::Align;
+use iced::Alignment;
 use iced::button;
 use jordle::logic::types::StringMatch;
 use crate::Message;
@@ -31,7 +31,7 @@ impl Keyboard {
 
 		let padding = 4;
         let mut col = Column::new()
-            .align_items(Align::Center)
+            .align_items(Alignment::Center)
             .width(Length::Shrink)
             .spacing(padding);
 
@@ -70,7 +70,7 @@ impl KeyboardRow {
 		let size = 50;
 
         let mut row = Row::new()
-            .align_items(Align::Center)
+            .align_items(Alignment::Center)
             .width(Length::Shrink)
             .spacing(padding);
 
@@ -79,7 +79,7 @@ impl KeyboardRow {
 				button_state,
 				Text::new(*c)
 					.size(30)
-					.horizontal_alignment(iced::HorizontalAlignment::Center))
+					.horizontal_alignment(iced::alignment::Horizontal::Center))
 				.style(*tile)
                 .on_press(Message::KeyboardButton(*c))
 				.width(Length::Units(size))
