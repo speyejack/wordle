@@ -1,13 +1,13 @@
 pub type StringMatch = Vec<CharMatch>;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum CharAlignment {
     NotFound,
     Misplaced,
     Exact,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct CharMatch {
     pub c: char,
     pub align: CharAlignment,

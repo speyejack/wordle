@@ -123,7 +123,7 @@ impl<'a> Wordle<'a> {
     }
 }
 
-fn match_word(target: &str, guess: &str) -> StringMatch {
+pub fn match_word(target: &str, guess: &str) -> StringMatch {
 	let (mut target_used, mut matches): (Vec<bool>, Vec<_>) = target.chars().zip(guess.chars())
 		.map(|(tc, gc)| if tc == gc {
 			(true, CharMatch{c: gc, align: CharAlignment::Exact})
