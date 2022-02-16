@@ -32,8 +32,8 @@ enum SelectedSolver {
 impl<'a> SelectedSolver {
 	fn create_solver(&self, wordlist: SolverWordList<'a>) -> Box<dyn Solver + 'a> {
 		match self {
-			Positional => Box::new(PositionalSolver::load_wordlist(wordlist)),
-			Entropy => Box::new(EntropySolver::load_wordlist(wordlist)),
+			Self::Positional => Box::new(PositionalSolver::load_wordlist(wordlist)),
+			Self::Entropy => Box::new(EntropySolver::load_wordlist(wordlist)),
 		}
 	}
 }
