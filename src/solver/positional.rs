@@ -15,7 +15,7 @@ impl<'a> PositionalSolver<'a> {
     }
 }
 
-impl<'a> Solver for PositionalSolver<'a> {
+impl Solver for PositionalSolver<'_> {
 
     fn guess(&self) -> Guess {
 		let counts = count_letter(&self.wordlist);
