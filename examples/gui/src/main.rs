@@ -133,8 +133,9 @@ impl Sandbox for WordleGui {
 
 		let mut footer = Row::new().align_items(Alignment::Center);
 		footer = footer
+			.push(Space::new(Length::FillPortion(1), Length::Shrink))
 			.push(reset_button)
-			.push(Space::new(Length::Units(4), Length::Fill));
+			.push(Space::new(Length::Units(4), Length::Shrink));
 
 		if let GameGuiState::Running(text_state) = &mut self.game_state {
 			footer = footer
@@ -145,25 +146,27 @@ impl Sandbox for WordleGui {
 					Message::TextChanged,
 				).on_submit(Message::TextSubmitted)
 				)
-				.push(Space::new(Length::Units(4), Length::Fill));
+				.push(Space::new(Length::Units(4), Length::Shrink));
 		}
 
 		footer = footer
 			.push(next_button)
+			.push(Space::new(Length::FillPortion(1), Length::Shrink))
 			.width(Length::Shrink);
 
 		column = column
 			.push(Space::new(Length::Fill, Length::FillPortion(1)))
 			.push(footer)
-			.push(Space::new(Length::Fill, Length::Units(20)))
+			.push(Space::new(Length::Fill, Length::Units(10)))
 			.push(self.keyboard.view())
-			.push(Space::new(Length::Fill, Length::Units(40)));
+			.push(Space::new(Length::Fill, Length::Units(20)));
 
 		Container::new(column)
-			.width(Length::Fill)
-			.height(Length::Fill)
-			.center_x()
+			// .width(Length::Fill)
+			// .height(Length::Fill)
+			// .center_x()
 			.center_y()
+			.height(Length::Fill)
 			.style(style::Theme::Dark)
 			.into()
 	}
@@ -201,7 +204,7 @@ impl Sandbox for WordleGui {
 	}
 
 	fn background_color(&self) -> Color {
-		Color::from_rgb8(18, 18, 19)
+		Theme::Dark.background()
 	}
 }
 

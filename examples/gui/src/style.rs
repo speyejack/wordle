@@ -9,17 +9,23 @@ pub enum Theme {
 	Dark,
 }
 
-impl container::StyleSheet for Theme {
-	fn style(&self) -> container::Style {
-		let color = match *self {
+impl Theme {
+	pub fn background(&self) -> Color {
+		match *self {
 			Theme::Light => Color::WHITE,
 			Theme::Dark => Color::from_rgb8(0x12, 0x12, 0x13),
-		};
+		}
+	}
+}
+
+impl container::StyleSheet for Theme {
+	fn style(&self) -> container::Style {
+		let bg_color = self.background();
 
 		container::Style {
 
 			text_color: Some(Color::WHITE),
-			background: Some(Background::Color(color)),
+			background: Some(Background::Color(bg_color)),
 
 			..container::Style::default()
 		}
