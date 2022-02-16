@@ -49,7 +49,7 @@ impl<'a> Solver for EntropySolver<'a> {
 		let filter = PosFilterCriteria::from_matches(guess_result);
 		let new_words: SolverWordList = self.wordlist
 			.iter()
-			.filter_map(|word| Some(word.clone()).filter(|x| filter.check(x)))
+			.filter_map(|word| Some(*word).filter(|x| filter.check(x)))
 			.collect();
 
 		self.wordlist = new_words
