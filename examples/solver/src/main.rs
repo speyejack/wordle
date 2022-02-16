@@ -1,8 +1,8 @@
-use clap::{Parser, Subcommand};
-use jordle::{logic::*, solver::{positional::PositionalSolver, solvers::SolverWordList, entropy::EntropySolver}};
+use clap::{Parser, Subcommand, ArgEnum};
+use jordle::{logic::*, solver::{positional::PositionalSolver, solvers::{SolverWordList, Solver}, entropy::EntropySolver}};
 
 use indicatif::ProgressBar;
-use std::collections::HashSet;
+use std::{collections::HashSet, marker::PhantomData};
 // use jordle::solver::positional::Pos
 
 type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver + 'a>;
@@ -12,6 +12,8 @@ type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver + 'a>;
 struct Cli {
     #[clap(subcommand)]
     command: Commands,
+    #[clap(default_value_t = SelectedSolver::Positional, arg_enum)]
+	solver: SelectedSolver,
 }
 
 #[derive(Subcommand)]
@@ -21,6 +23,21 @@ enum Commands {
     Target { target: String },
 }
 
+#[derive(ArgEnum, Clone)]
+enum SelectedSolver {
+	Positional,
+	Entropy,
+}
+
+impl<'a> SelectedSolver {
+	fn create_solver(&self, wordlist: SolverWordList<'a>) -> Box<dyn Solver + 'a> {
+		match self {
+			Positional => Box::new(PositionalSolver::load_wordlist(wordlist)),
+			Entropy => Box::new(EntropySolver::load_wordlist(wordlist)),
+		}
+	}
+}
+
 fn main() {
     let command = Cli::parse();
     let rng = rand::thread_rng();
@@ -28,15 +45,16 @@ fn main() {
     let params = GameParameters::default();
 
     let wordle = Wordle::new_random_game(params, rng);
+	let solver = command.solver;
 
     match command.command {
-        Commands::Trial {} => trial_solver(wordle),
-        Commands::Sample { count } => repeat_auto_game(wordle, count),
-        Commands::Target { target } => run_auto_game(wordle, target),
+        Commands::Trial {} => trial_solver(wordle, solver),
+        Commands::Sample { count } => repeat_auto_game(wordle, count, solver),
+        Commands::Target { target } => run_auto_game(wordle, target, solver),
     }
 }
 
-fn run_auto_game(mut wordle: Wordle, target: String) {
+fn run_auto_game(mut wordle: Wordle, target: String, solver: SelectedSolver) {
     println!("Searching for word: {}\n", &target);
     wordle.state.target_word = target;
 
@@ -47,7 +65,7 @@ fn run_auto_game(mut wordle: Wordle, target: String) {
         .map(|x| *x)
         .collect();
 
-	let mut solver: WordleSolver =  Box::new(EntropySolver::load_wordlist(game_words));
+	let mut solver: WordleSolver =  solver.create_solver(game_words);
 
     loop {
         let (running, word) = take_guess(&mut wordle, &mut solver);
@@ -60,13 +78,13 @@ fn run_auto_game(mut wordle: Wordle, target: String) {
     println!("Solved!")
 }
 
-fn repeat_auto_game(mut wordle: Wordle, played_games: usize) {
+fn repeat_auto_game(mut wordle: Wordle, played_games: usize, solver: SelectedSolver) {
     let mut guess_count = 0;
     let mut fail_count = 0;
 
     let bar = ProgressBar::new(played_games.try_into().unwrap());
     for _ in 0..played_games {
-        let guesses = auto_game(&mut wordle);
+        let guesses = auto_game(&mut wordle, &solver);
         guess_count += guesses;
         let failed = guesses > 6;
         fail_count += if failed { 1 } else { 0 };
@@ -84,7 +102,7 @@ fn repeat_auto_game(mut wordle: Wordle, played_games: usize) {
     );
 }
 
-fn trial_solver(mut wordle: Wordle) {
+fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
     let mut guess_count = 0;
     let mut fail_count = 0;
 	let guess_words = wordle.params.answer_wordlist.clone();
@@ -95,7 +113,7 @@ fn trial_solver(mut wordle: Wordle) {
 		wordle = wordle.restart();
 		wordle.state.target_word = word.to_string();
 
-        let guesses = auto_game(&mut wordle);
+        let guesses = auto_game(&mut wordle, &solver);
         guess_count += guesses;
         let failed = guesses > 6;
         fail_count += if failed { 1 } else { 0 };
@@ -112,7 +130,7 @@ fn trial_solver(mut wordle: Wordle) {
     );
 }
 
-fn auto_game(wordle: &mut Wordle) -> i32 {
+fn auto_game(wordle: &mut Wordle, solver: &SelectedSolver) -> i32 {
     let game_words = wordle
         .params
         .answer_wordlist
@@ -120,7 +138,7 @@ fn auto_game(wordle: &mut Wordle) -> i32 {
         .map(|x| *x)
         .collect::<SolverWordList>();
 
-	let mut solver: WordleSolver = Box::new(EntropySolver::load_wordlist(game_words));
+	let mut solver: WordleSolver = solver.create_solver(game_words);
 
     let mut guess_count = 0;
 
