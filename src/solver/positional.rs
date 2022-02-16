@@ -17,20 +17,18 @@ impl<'a> PositionalSolver<'a> {
 
 impl Solver for PositionalSolver<'_> {
 
-    fn guess(&self) -> Guess {
+    fn guess(&self) -> Option<Guess> {
 		let counts = count_letter(&self.wordlist);
 		let word = self.wordlist
 			.iter()
 			.map(|x| (x, score_word(x, &counts)))
-			.fold((&"", 0.0), |acc, item| {
+			.reduce(|acc, item| {
 				if acc.1 > item.1 {
 					acc
 				} else {
 					item
 				}
-			})
-			.0
-			.to_string();
+			}).map(|x| x.0.to_string());
 		word
 	}
 

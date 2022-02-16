@@ -111,7 +111,7 @@ fn take_guess(
     solver: &mut WordleSolver,
 ) -> (bool, String) {
 
-	let guess_word = solver.guess();
+	let guess_word = solver.guess().expect(&format!("Failed to find guess with word {}", &wordle.state.target_word));
 
     let guess_result = wordle.guess(&guess_word);
 

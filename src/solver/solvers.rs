@@ -5,10 +5,10 @@ pub type Guess = String;
 pub type SolverWordList<'a> = HashSet<&'a str>;
 
 pub trait Solver {
-	fn guess(&self) -> Guess;
+	fn guess(&self) -> Option<Guess>;
 	fn narrow_words(&mut self, guess_result: &[CharMatch]);
 
-	fn narrow_then_guess(&mut self, guess_result: &[CharMatch]) -> Guess {
+	fn narrow_then_guess(&mut self, guess_result: &[CharMatch]) -> Option<Guess> {
 		self.narrow_words(guess_result);
 		self.guess()
 	}
