@@ -110,8 +110,7 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
 	let played_games = guess_words.len() as u64;
     let bar = ProgressBar::new(played_games);
 	for word in guess_words.into_iter() {
-		wordle = wordle.restart();
-		wordle.state.target_word = word.to_string();
+		wordle = wordle.restart_with_target(word.to_string());
 
         let guesses = auto_game(&mut wordle, &solver);
         guess_count += guesses;

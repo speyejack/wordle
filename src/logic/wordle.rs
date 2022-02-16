@@ -78,6 +78,14 @@ impl<'a> Wordle<'a> {
         Self::new_random_game(params, rng)
     }
 
+    pub fn restart_with_target(self, target: String) -> Self {
+        let params = self.params;
+        let rng = self.state.rng;
+
+        Self::new_game(params, rng, target)
+    }
+
+
     pub fn guess(&mut self, guessed_word: &str) -> WordValidation {
         let words = &self.params.guess_wordlist;
         let target_word = self.state.target_word.as_str();
