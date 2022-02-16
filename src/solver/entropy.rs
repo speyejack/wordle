@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::logic::{CharMatch, types::matches_str, wordle::match_word, CharAlignment};
+use crate::logic::{CharMatch, wordle::match_word, CharAlignment};
 
 use super::{solvers::{SolverWordList, Solver, Guess}, filters::{PosFilterCriteria, FilterCriteria}};
 

@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand, ArgEnum};
 use jordle::{logic::*, solver::{positional::PositionalSolver, solvers::{SolverWordList, Solver}, entropy::EntropySolver}};
 
 use indicatif::ProgressBar;
-use std::{collections::HashSet, marker::PhantomData};
+use std::collections::HashSet;
 // use jordle::solver::positional::Pos
 
 type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver + 'a>;
