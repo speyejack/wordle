@@ -1,11 +1,11 @@
 use clap::{Parser, Subcommand};
-use jordle::{logic::*, solver::positional::PositionalSolver};
+use jordle::{logic::*, solver::{positional::PositionalSolver, solvers::SolverWordList}};
 
 use indicatif::ProgressBar;
 use std::collections::HashSet;
 // use jordle::solver::positional::Pos
 
-type WordleSolver = Box<dyn jordle::solver::solvers::Solver>;
+type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver + 'a>;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -39,12 +39,12 @@ fn run_auto_game(mut wordle: Wordle, target: String) {
     println!("Searching for word: {}\n", &target);
     wordle.state.target_word = target;
 
-    let game_words = wordle
+    let game_words: HashSet<&str> = wordle
         .params
         .answer_wordlist
-        .clone()
-        .into_iter()
-        .collect::<HashSet<_>>();
+        .iter()
+        .map(|x| *x)
+        .collect();
 
 	let mut solver: WordleSolver =  Box::new(PositionalSolver::load_wordlist(game_words));
 
@@ -87,11 +87,11 @@ fn auto_game(wordle: &mut Wordle) -> i32 {
     let game_words = wordle
         .params
         .answer_wordlist
-        .clone()
-        .into_iter()
-        .collect::<HashSet<_>>();
+        .iter()
+        .map(|x| *x)
+        .collect::<SolverWordList>();
 
-	let mut solver: WordleSolver =  Box::new(PositionalSolver::load_wordlist(game_words));
+	let mut solver: WordleSolver = Box::new(PositionalSolver::load_wordlist(game_words));
 
     let mut guess_count = 0;
 

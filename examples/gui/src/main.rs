@@ -19,8 +19,8 @@ pub enum GameVarient {
 	Fuzzle,
 }
 
-struct WordleGui {
-	wordle: Wordle,
+struct WordleGui<'a> {
+	wordle: Wordle<'a>,
 	words: Vec<WordRow>,
 	reset_button: button::State,
 	next_button: button::State,
@@ -44,7 +44,7 @@ pub enum Message {
 	RestartGame(GameVarient),
 }
 
-impl Default for WordleGui {
+impl Default for WordleGui<'static> {
 	fn default() -> Self {
 
 		WordleGui {
@@ -60,7 +60,7 @@ impl Default for WordleGui {
 	}
 }
 
-impl WordleGui {
+impl WordleGui<'_> {
 	fn restart(&mut self, varient: GameVarient) {
 		let mut wordle = Wordle::default();
 
@@ -80,7 +80,7 @@ impl WordleGui {
 
 }
 
-impl Sandbox for WordleGui {
+impl Sandbox for WordleGui<'_> {
 	type Message = Message;
 
 	fn new() -> Self {

@@ -3,26 +3,26 @@ use crate::logic::CharMatch;
 use super::solvers::{Solver, SolverWordList, Guess};
 use super::filters::{PosFilterCriteria, FilterCriteria};
 
-pub struct PositionalSolver {
-	wordlist: SolverWordList,
+pub struct PositionalSolver<'a> {
+	wordlist: SolverWordList<'a>,
 }
 
-impl PositionalSolver {
-    pub fn load_wordlist(wordlist: SolverWordList) -> Self {
+impl<'a> PositionalSolver<'a> {
+    pub fn load_wordlist(wordlist: SolverWordList<'a>) -> Self {
         Self {
 			wordlist,
 		}
     }
 }
 
-impl Solver for PositionalSolver {
+impl<'a> Solver for PositionalSolver<'a> {
 
     fn guess(&self) -> Guess {
 		let counts = count_letter(&self.wordlist);
 		let word = self.wordlist
 			.iter()
 			.map(|x| (x, score_word(x, &counts)))
-			.fold((&"".to_string(), 0.0), |acc, item| {
+			.fold((&"", 0.0), |acc, item| {
 				if acc.1 > item.1 {
 					acc
 				} else {
@@ -69,7 +69,7 @@ pub fn score_word(word: &str, letter_freq: &PosLetterFreq) -> f32 {
     final_score
 }
 
-pub fn count_letter(word_list: &HashSet<String>) -> PosLetterFreq {
+pub fn count_letter(word_list: &HashSet<&'_ str>) -> PosLetterFreq {
     let max_size = word_list.iter().map(|x| x.len()).max().unwrap_or(0);
 
     let mut pos_count: Vec<LetterCount> = (0..max_size).map(|_| LetterCount::new()).collect();

@@ -31,13 +31,13 @@ pub enum GameEndTriggers {
 	StillPlaying,
 }
 
-pub struct Wordle {
-    pub params: GameParameters,
+pub struct Wordle<'a> {
+    pub params: GameParameters<'a>,
     pub state: GameState,
 }
 
-impl Wordle {
-    pub fn new_random_game(params: GameParameters, mut rng: ThreadRng) -> Self {
+impl<'a> Wordle<'a> {
+    pub fn new_random_game(params: GameParameters<'a>, mut rng: ThreadRng) -> Self {
         let target = params
             .answer_wordlist
             .iter()
@@ -64,7 +64,7 @@ impl Wordle {
 		GameEndTriggers::StillPlaying
 	}
 
-    pub fn new_game(params: GameParameters, rng: ThreadRng, target: String) -> Self {
+    pub fn new_game(params: GameParameters<'a>, rng: ThreadRng, target: String) -> Self {
         Self {
             state: GameState::new_game(&params, rng, target),
             params,
@@ -146,7 +146,7 @@ fn match_word(target: &str, guess: &str) -> StringMatch {
 	matches
 }
 
-impl Default for Wordle {
+impl Default for Wordle<'_> {
     fn default() -> Self {
         let rng = thread_rng();
         let params = GameParameters::default();

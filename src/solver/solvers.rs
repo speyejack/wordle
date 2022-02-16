@@ -2,7 +2,7 @@ use crate::logic::CharMatch;
 use std::collections::HashSet;
 
 pub type Guess = String;
-pub type SolverWordList = HashSet<String>;
+pub type SolverWordList<'a> = HashSet<&'a str>;
 
 pub trait Solver {
 	fn guess(&self) -> Guess;
