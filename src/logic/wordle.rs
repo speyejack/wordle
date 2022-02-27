@@ -1,4 +1,4 @@
-use super::types::{StringMatch, matches_str};
+use super::types::{matches_str, StringMatch};
 use super::*;
 use super::{params::GameParameters, state::GameState, CharMatch};
 use rand::prelude::IteratorRandom;
@@ -28,7 +28,7 @@ pub enum WordValidation {
 pub enum GameEndTriggers {
     Timeout,
     NoTriesLeft,
-	StillPlaying,
+    StillPlaying,
 }
 
 pub struct Wordle<'a> {
@@ -48,21 +48,30 @@ impl<'a> Wordle<'a> {
         Self::new_game(params, rng, target)
     }
 
-	pub fn check_state(&self) -> GameEndTriggers {
-		let time_expired = self.params.time_limit.map(|dur| self.state.start_time.map(|start| dur < start.elapsed())).flatten().unwrap_or(false);
+    pub fn check_state(&self) -> GameEndTriggers {
+        let time_expired = self
+            .params
+            .time_limit
+            .map(|dur| self.state.start_time.map(|start| dur < start.elapsed()))
+            .flatten()
+            .unwrap_or(false);
 
-		if time_expired {
-			return GameEndTriggers::Timeout;
-		}
+        if time_expired {
+            return GameEndTriggers::Timeout;
+        }
 
-		let no_tries_left = self.params.tries.map(|x| x >= self.state.prev_guesses.len()).unwrap_or(false);
+        let no_tries_left = self
+            .params
+            .tries
+            .map(|x| x >= self.state.prev_guesses.len())
+            .unwrap_or(false);
 
-		if no_tries_left {
-			return GameEndTriggers::NoTriesLeft;
-		}
+        if no_tries_left {
+            return GameEndTriggers::NoTriesLeft;
+        }
 
-		GameEndTriggers::StillPlaying
-	}
+        GameEndTriggers::StillPlaying
+    }
 
     pub fn new_game(params: GameParameters<'a>, rng: ThreadRng, target: String) -> Self {
         Self {
@@ -85,7 +94,6 @@ impl<'a> Wordle<'a> {
         Self::new_game(params, rng, target)
     }
 
-
     pub fn guess(&mut self, guessed_word: &str) -> WordValidation {
         let words = &self.params.guess_wordlist;
         let target_word = self.state.target_word.as_str();
@@ -102,13 +110,17 @@ impl<'a> Wordle<'a> {
                 InvalidationReason::UnknownWord,
                 guessed_word.to_string(),
             );
-        } else if self.state.prev_guesses.iter().any(|old_matches| matches_str(old_matches, guessed_word)) {
+        } else if self
+            .state
+            .prev_guesses
+            .iter()
+            .any(|old_matches| matches_str(old_matches, guessed_word))
+        {
             return WordValidation::Invalid(
                 InvalidationReason::RepeatWord,
                 guessed_word.to_string(),
             );
-
-		}
+        }
 
         let matches = match_word(target_word, guessed_word);
         self.state.prev_guesses.push(matches.clone());
@@ -132,26 +144,44 @@ impl<'a> Wordle<'a> {
 }
 
 pub fn match_word(target: &str, guess: &str) -> StringMatch {
-	let (mut target_used, mut matches): (Vec<bool>, Vec<_>) = target.chars().zip(guess.chars())
-		.map(|(tc, gc)| if tc == gc {
-			(true, CharMatch{c: gc, align: CharAlignment::Exact})
-		} else {
-			(false, CharMatch{c: gc, align: CharAlignment::NotFound})
-		}).unzip();
+    let (mut target_used, mut matches): (Vec<bool>, Vec<_>) = target
+        .chars()
+        .zip(guess.chars())
+        .map(|(tc, gc)| {
+            if tc == gc {
+                (
+                    true,
+                    CharMatch {
+                        c: gc,
+                        align: CharAlignment::Exact,
+                    },
+                )
+            } else {
+                (
+                    false,
+                    CharMatch {
+                        c: gc,
+                        align: CharAlignment::NotFound,
+                    },
+                )
+            }
+        })
+        .unzip();
 
+    matches
+        .iter_mut()
+        .filter(|x| matches!(x.align, CharAlignment::NotFound))
+        .for_each(|x| {
+            for (has_match, tc) in target_used.iter_mut().zip(target.chars()).filter(|x| !*x.0) {
+                if x.c == tc {
+                    *has_match = true;
+                    x.align = CharAlignment::Misplaced;
+                    break;
+                }
+            }
+        });
 
-	matches.iter_mut().filter(|x| matches!(x.align, CharAlignment::NotFound))
-		.for_each(|x|
-			 for (has_match, tc) in target_used.iter_mut().zip(target.chars()).filter(|x| !*x.0) {
-				 if x.c == tc {
-					 *has_match = true;
-					 x.align = CharAlignment::Misplaced;
-					 break
-				 }
-			 }
-		);
-
-	matches
+    matches
 }
 
 impl Default for Wordle<'_> {

@@ -1,7 +1,7 @@
 use jordle::logic::*;
 
-use std::time::Duration;
 use std::io::stdin;
+use std::time::Duration;
 
 use anyhow::Result;
 use owo_colors::colors::*;
@@ -65,9 +65,7 @@ fn play_regular_game(mut wordle: Wordle) -> Result<()> {
             },
         }
 
-        let current_dur = start_time
-			.map(|x| x.elapsed())
-			.unwrap_or(Duration::ZERO);
+        let current_dur = start_time.map(|x| x.elapsed()).unwrap_or(Duration::ZERO);
 
         if current_dur >= time_limit {
             println!("Out of time :(");

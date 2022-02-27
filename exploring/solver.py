@@ -1,4 +1,4 @@
-
+import progressbar
 import string
 
 
@@ -51,6 +51,15 @@ def filter_word(word, pos=[None]*5, nopos=[[]]*5, inc=[], exc=[], size=(5,5)):
 
     return True
 
+def match_word(guess_word, target_word):
+    guess_set = set(guess_word)
+    target_set = set(guess_word)
+
+    exc = target_set.symmetric_difference(guess_set)
+    inc = target_set.union(target_set)
+    pos = [tc if tc == gc else None for (tc, gc) in zip(guess_word, target_word)]
+    nopos = [[tc] if tc == gc else [] for (tc, gc) in zip(guess_word, target_word)]
+    return {"exc": exc, "inc": inc, "pos":pos, "nopos":nopos}
 
 
 def filter_list(word_list, *args, **kwargs):
@@ -66,9 +75,7 @@ def plist(word_list):
 def score_words(word_list, letter_count):
     return [(score_word(word, letter_count), word) for word in word_list]
 
-
-if __name__ == "__main__":
-    root_word_list = load_list("/home/jack/Documents/jordle/words/answers.txt")
+def manually_get_word(root_word_list):
     # root_word_list = load_list("/home/jack/Downloads/words.txt")
     word_list = filter_list(root_word_list)
     # print(word_list)
@@ -91,3 +98,31 @@ if __name__ == "__main__":
 
     print(word_list)
     print("Solved!")
+
+if __name__ == "__main__":
+    root_word_list = load_list("/home/jack/Documents/jordle/words/answers.txt")
+    word_list = filter_list(root_word_list)
+
+    score = []
+    with progressbar.ProgressBar(max_value=len(word_list)**1) as bar:
+        count = 0
+        # for first_guess in word_list:
+        for second_guess in word_list:
+
+
+            cum = 0
+
+            for target_word in word_list:
+                # first_match = match_word(first_guess, target_word)
+                second_match = match_word(second_guess, target_word)
+
+                filtered_list = word_list
+                # filtered_list = filter_list(filtered_list, **first_match)
+                filtered_list = filter_list(filtered_list, **second_match)
+
+                cum += len(filtered_list)
+            score.append((cum/len(word_list), second_guess, second_guess))
+            count += 1
+            bar.update(count)
+    score.sort()
+    print(score[-5:])

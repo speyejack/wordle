@@ -30,11 +30,9 @@ impl FilterCriteria for PosFilterCriteria {
 
         let nopos = matches
             .iter()
-            .map(|x| {
-				match x.align {
-					CharAlignment::Misplaced | CharAlignment::NotFound => vec![x.c],
-					_ => vec![],
-				}
+            .map(|x| match x.align {
+                CharAlignment::Misplaced | CharAlignment::NotFound => vec![x.c],
+                _ => vec![],
             })
             .collect();
 
@@ -49,7 +47,13 @@ impl FilterCriteria for PosFilterCriteria {
         let exc = matches
             .iter()
             .filter_map(|x| match x.align {
-                CharAlignment::NotFound => if inc.contains(&x.c) {None}  else {Some(x.c)},
+                CharAlignment::NotFound => {
+                    if inc.contains(&x.c) {
+                        None
+                    } else {
+                        Some(x.c)
+                    }
+                }
                 _ => None,
             })
             .collect();

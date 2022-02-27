@@ -1,8 +1,8 @@
 use rand::prelude::ThreadRng;
 use std::time::Instant;
 
-use super::types::StringMatch;
 use super::params::GameParameters;
+use super::types::StringMatch;
 
 pub struct GameState {
     pub prev_guesses: Vec<StringMatch>,

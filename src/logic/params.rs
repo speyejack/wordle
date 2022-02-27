@@ -16,10 +16,8 @@ pub struct GameParameters<'a> {
 impl Default for GameParameters<'static> {
     fn default() -> Self {
         let word_size = (5, 5);
-		let filter_words = |x: &'static str| {
-			Some(x)
-				.filter(|x| x.len() >= word_size.0 && x.len() <= word_size.1)
-		};
+        let filter_words =
+            |x: &'static str| Some(x).filter(|x| x.len() >= word_size.0 && x.len() <= word_size.1);
 
         let answer_wordlist: Vec<&str> = include_str!("../../words/answers.txt")
             .lines()

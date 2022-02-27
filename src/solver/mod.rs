@@ -1,4 +1,4 @@
-pub mod filters;
-pub mod solvers;
-pub mod positional;
 pub mod entropy;
+pub mod filters;
+pub mod positional;
+pub mod solvers;
