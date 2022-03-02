@@ -2,7 +2,7 @@ use clap::{ArgEnum, Parser, Subcommand};
 use jordle::{
     logic::{mutator::NoopMutator, params::GameParameters, *},
     solver::{
-        entropy::EntropySolver,
+        entropy::{EntropySolver, GlobalFilteredEntropySolver, GlobalShrinkingEntropySolver},
         positional::PositionalSolver,
         solvers::{Solver, SolverWordList},
     },
@@ -32,6 +32,8 @@ enum Commands {
 enum SelectedSolver {
     Positional,
     Entropy,
+    ShrinkingEntropy,
+    FilteredEntropy,
 }
 
 impl<'a> SelectedSolver {
@@ -39,6 +41,8 @@ impl<'a> SelectedSolver {
         match self {
             Self::Positional => Box::new(PositionalSolver::new(wordlist)),
             Self::Entropy => Box::new(EntropySolver::new(wordlist)),
+            Self::ShrinkingEntropy => Box::new(GlobalShrinkingEntropySolver::new(wordlist)),
+            Self::FilteredEntropy => Box::new(GlobalFilteredEntropySolver::new(wordlist)),
         }
     }
 }
