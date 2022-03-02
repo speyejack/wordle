@@ -52,10 +52,11 @@ fn create_simple_game_params() -> GameParameters<'static> {
     let filter_words =
         |x: &'static str| Some(x).filter(|x| x.len() >= word_size.0 && x.len() <= word_size.1);
 
-    let answer_wordlist: Vec<&str> = include_str!("../../../words/repeats.txt")
-        .lines()
-        .filter_map(filter_words)
-        .collect();
+    let word_str = include_str!("../../../words/sample.txt");
+    // let word_str = include_str!("../../../words/repeats.txt");
+    // let word_str = include_str!("../../../words/super_simple.txt");
+
+    let answer_wordlist: Vec<&str> = word_str.lines().filter_map(filter_words).collect();
 
     let guess_wordlist = answer_wordlist.iter().map(|x| *x).collect();
 
