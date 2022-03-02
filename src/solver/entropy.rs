@@ -110,8 +110,74 @@ impl<'a> Solver<'a> for EntropySolver<'a> {
     }
 }
 
+
+#[derive(Debug)]
+pub struct GlobalShrinkingEntropySolver<'a> {
+    match_map: MatchMap<'a>,
+    wordlist: SolverWordList<'a>,
+}
+
+impl<'a> GlobalShrinkingEntropySolver<'a> {
+    pub fn new(base_wordlist: &SolverWordList<'a>) -> Self {
+        let match_map = create_match_map(base_wordlist);
+
+        Self {
+            match_map,
+            wordlist: base_wordlist.clone(),
+        }
+    }
+}
+
+impl<'a> Solver<'a> for GlobalShrinkingEntropySolver<'a> {
+    fn reload_wordlist(&mut self, wordlist: &SolverWordList<'a>) {
+        self.wordlist = wordlist.clone();
+    }
+
+    fn guess(&self) -> Option<Guess> {
+        let word_total = self.wordlist.len() as f32;
+        let guess = self
+            .wordlist
+            .iter()
+            .filter_map(|guess_word| {
+                let word_dist = create_word_dist(guess_word, &self.wordlist, &self.match_map);
+                let guess_estimated_entropy: f32 = word_dist
+                    .values()
+                    .map(|match_count| {
+                        let selection_prob = *match_count as f32 / word_total;
+                        let selection_entropy = (1.0 / selection_prob).log2();
+
+                        selection_prob * selection_entropy
+                    })
+                    .sum();
+
+                Some((guess_word, guess_estimated_entropy))
+            })
+            .reduce(|best_guess, current_guess| {
+                if best_guess.1 >= current_guess.1 {
+                    best_guess
+                } else {
+                    current_guess
+                }
+            })
+            .map(|x| x.0.to_string());
+
+        guess
+    }
+
+    fn narrow_words(&mut self, guess_result: &[CharMatch]) {
+        let filter = PosFilterCriteria::from_matches(guess_result);
+        let new_words: SolverWordList = self
+            .wordlist
+            .iter()
+            .filter_map(|word| Some(*word).filter(|x| filter.check(x)))
+            .collect();
+
+        self.wordlist = new_words
+    }
+}
+
 fn create_match_map<'a>(wordlist: &SolverWordList<'a>) -> MatchMap<'a> {
-    let mut map = HashMap::new();
+    let mut map = FxHashMap::default();
     for target_word in wordlist {
         for guess_word in wordlist {
             let word_match = match_word(target_word, guess_word);
@@ -122,20 +188,28 @@ fn create_match_map<'a>(wordlist: &SolverWordList<'a>) -> MatchMap<'a> {
     map
 }
 
-fn match_potentials<'a>(word: &'a str, str_match: StringMatch) -> Vec<Vec<CharMatch>> {}
+fn create_word_dist<'a>(
+    word: &'a str,
+    wordlist: &SolverWordList<'a>,
+    match_map: &MatchMap<'a>,
+) -> HashMap<Vec<CharAlignment>, u32> {
+    let mut word_dist = HashMap::new();
+
+    for guess_word in wordlist {
+        let word_match = match_map.get(&(word, *guess_word)).unwrap().clone();
+        let alignments = word_match.into_iter().map(|x| x.align).collect();
+
+        *word_dist.entry(alignments).or_insert(0) += 1_u32;
+    }
+
+    word_dist
+}
 
 fn create_dist_map<'a>(wordlist: &SolverWordList<'a>, match_map: &MatchMap<'a>) -> DistMap<'a> {
-    let mut dist_map = HashMap::new();
+    let mut dist_map = DistMap::default();
 
     for word in wordlist {
-        let mut local_dist = HashMap::new();
-
-        for guess_word in wordlist {
-            let word_match = match_map.get(&(*word, *guess_word)).unwrap().clone();
-            let alignments = word_match.into_iter().map(|x| x.align).collect();
-
-            *local_dist.entry(alignments).or_insert(0) += 1;
-        }
+		let local_dist = create_word_dist(word, wordlist, match_map);
 
         dist_map.insert(*word, local_dist);
     }
