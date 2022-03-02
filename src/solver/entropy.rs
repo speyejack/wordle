@@ -1,4 +1,6 @@
-use std::{collections::HashMap, ops::RangeBounds};
+use std::collections::HashMap;
+
+use rustc_hash::FxHashMap;
 
 use crate::logic::{types::StringMatch, wordle::match_word, CharAlignment, CharMatch};
 
@@ -7,8 +9,8 @@ use super::{
     solvers::{Guess, Solver, SolverWordList},
 };
 
-type MatchMap<'a> = HashMap<(&'a str, &'a str), StringMatch>;
-type DistMap<'a> = HashMap<&'a str, HashMap<Vec<CharAlignment>, u32>>;
+type MatchMap<'a> = FxHashMap<(&'a str, &'a str), StringMatch>;
+type DistMap<'a> = FxHashMap<&'a str, HashMap<Vec<CharAlignment>, u32>>;
 
 #[derive(Debug)]
 pub struct EntropySolver<'a> {
