@@ -207,6 +207,9 @@ fn take_guess(wordle: &mut Wordle, solver: &mut WordleSolver) -> (bool, String) 
 
             return (true, guess_word);
         }
-        WordValidation::Invalid(_, _) => unreachable!(),
+        WordValidation::Invalid(_, _) => {
+            println!("Guessed an invalid word: {}", &guess_word);
+            unreachable!()
+        }
     }
 }
