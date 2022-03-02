@@ -218,3 +218,93 @@ fn create_dist_map<'a>(wordlist: &SolverWordList<'a>, match_map: &MatchMap<'a>) 
 
     dist_map
 }
+
+
+#[derive(Debug)]
+pub struct GlobalFilteredEntropySolver<'a> {
+    match_map: MatchMap<'a>,
+    wordlist: SolverWordList<'a>,
+    filtered_list: SolverWordList<'a>,
+	prev_guesses: Vec<String>,
+}
+
+impl<'a> GlobalFilteredEntropySolver<'a> {
+    pub fn new(base_wordlist: &SolverWordList<'a>) -> Self {
+        let match_map = create_match_map(base_wordlist);
+
+        Self {
+            match_map,
+            wordlist: base_wordlist.clone(),
+            filtered_list: base_wordlist.clone(),
+			prev_guesses: Vec::default(),
+        }
+    }
+}
+
+impl<'a> Solver<'a> for GlobalFilteredEntropySolver<'a> {
+    fn reload_wordlist(&mut self, wordlist: &SolverWordList<'a>) {
+        self.filtered_list = wordlist.clone();
+		self.prev_guesses = Vec::default();
+	}
+
+    fn guess(&self) -> Option<Guess> {
+        let word_total = self.wordlist.len() as f32;
+
+        let prev_guess_strs: Vec<&str> = self.prev_guesses.iter().map(|x| x.as_str()).collect();
+
+        let guess = self
+            .wordlist
+            .iter()
+            .filter_map(|guess_word| {
+                let word_dist = create_word_dist(guess_word, &self.filtered_list, &self.match_map);
+
+				if prev_guess_strs.contains(guess_word) {
+					return None
+				}
+
+                let guess_estimated_entropy: f32 = word_dist
+                    .values()
+                    .map(|match_count| {
+                        let selection_prob = *match_count as f32 / word_total;
+                        let selection_entropy = (1.0 / selection_prob).log2();
+
+                        selection_prob * selection_entropy
+                    })
+                    .sum();
+
+				let prev_multiplier = if self.filtered_list.contains(guess_word) {
+					1.0001
+				}  else { 1.0 };
+
+				let guess_estimated_entropy =  guess_estimated_entropy * prev_multiplier;
+
+				// println!("{:?}", (guess_word, guess_estimated_entropy));
+                Some((guess_word, guess_estimated_entropy))
+            })
+            .reduce(|best_guess, current_guess| {
+                if best_guess.1 >= current_guess.1 {
+                    best_guess
+                } else {
+                    current_guess
+                }
+            })
+            .map(|x| x.0.to_string());
+
+		// println!("Guessed: {:?}", guess);
+
+        guess
+    }
+
+    fn narrow_words(&mut self, guess_result: &[CharMatch]) {
+        let filter = PosFilterCriteria::from_matches(guess_result);
+        let new_words: SolverWordList = self
+            .filtered_list
+            .iter()
+            .filter_map(|word| Some(*word).filter(|x| filter.check(x)))
+            .collect();
+
+
+		self.prev_guesses.push(guess_result.into_iter().map(|x| x.c).collect());
+        self.filtered_list = new_words
+    }
+}
