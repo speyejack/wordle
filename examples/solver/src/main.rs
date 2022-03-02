@@ -113,9 +113,11 @@ fn repeat_auto_game(mut wordle: Wordle, played_games: usize, solver: SelectedSol
     let words = wordle.params.answer_wordlist.clone();
     let mut solver = solver.create_solver(&words);
 
-	let bar = ProgressBar::new(played_games.try_into().unwrap());
-	bar.set_style(ProgressStyle::default_bar()
-				  .template("[{elapsed_precise}/{eta_precise}] {bar:cyan/blue} {pos:>7}/{len:7} {msg}"));
+    let bar = ProgressBar::new(played_games.try_into().unwrap());
+    bar.set_style(
+        ProgressStyle::default_bar()
+            .template("[{elapsed_precise}/{eta_precise}] {bar:cyan/blue} {pos:>7}/{len:7} {msg}"),
+    );
 
     for _ in 0..played_games {
         let guesses = auto_game(&mut wordle, &mut solver);
@@ -125,7 +127,7 @@ fn repeat_auto_game(mut wordle: Wordle, played_games: usize, solver: SelectedSol
 
         wordle = wordle.restart();
         solver.reload_wordlist(&words);
-		bar.set_message(format!("Failed: {}", fail_count));
+        bar.set_message(format!("Failed: {}", fail_count));
         bar.inc(1);
     }
     bar.finish();
@@ -144,8 +146,9 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
     let played_games = target_words.len() as u64;
     let bar = ProgressBar::new(played_games);
 
-	bar.set_style(ProgressStyle::default_bar()
-				  .template("[{elapsed_precise}/{eta_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}"));
+    bar.set_style(ProgressStyle::default_bar().template(
+        "[{elapsed_precise}/{eta_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}",
+    ));
 
     let guessing_words = wordle.params.answer_wordlist.clone();
     let mut solver = solver.create_solver(&guessing_words);
@@ -159,12 +162,16 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
         let guesses = auto_game(&mut wordle, &mut solver);
         guess_count += guesses;
         let failed = guesses > 6;
-		if failed {
-			failed_words.push((guesses, target_word));
-		}
+        if failed {
+            failed_words.push((guesses, target_word));
+        }
 
         solver.reload_wordlist(&guessing_words);
-		bar.set_message(format!("Failed: {} ({:?})", failed_words.len(), failed_words.last()));
+        bar.set_message(format!(
+            "Failed: {} ({:?})",
+            failed_words.len(),
+            failed_words.last()
+        ));
         bar.inc(1);
     }
     bar.finish();
