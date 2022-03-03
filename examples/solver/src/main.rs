@@ -4,7 +4,7 @@ use jordle::{
     solver::{
         entropy::{EntropySolver, GlobalFilteredEntropySolver, GlobalShrinkingEntropySolver},
         positional::PositionalSolver,
-        solvers::{Solver, SolverWordList},
+        solvers::{Solver, SolverWordList, Guess},
     },
 };
 
@@ -88,7 +88,7 @@ fn main() {
     }
 }
 
-fn run_auto_game(mut wordle: Wordle, target: String, solver: SelectedSolver) {
+fn run_auto_game<'a>(mut wordle: Wordle<'a>, target: String, solver: SelectedSolver) {
     println!("Searching for word: {}\n", &target);
     wordle.state.target_word = target;
 
@@ -186,7 +186,7 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
     );
 }
 
-fn auto_game<'a>(wordle: &'a mut Wordle, solver: &mut WordleSolver<'a>) -> i32 {
+fn auto_game<'a>(wordle: &'a mut Wordle<'a>, solver: &'a mut WordleSolver<'a>) -> i32 {
     let mut guess_count = 0;
 
     loop {
@@ -201,13 +201,13 @@ fn auto_game<'a>(wordle: &'a mut Wordle, solver: &mut WordleSolver<'a>) -> i32 {
     guess_count
 }
 
-fn take_guess<'a>(wordle: &'a mut Wordle, solver: &mut WordleSolver<'a>) -> (bool, String) {
+fn take_guess<'a>(wordle: &'a mut Wordle<'a>, solver: &'a mut WordleSolver<'a>) -> (bool, Guess<'a>) {
     let guess_word = solver.guess().expect(&format!(
         "Failed to find guess with word {}",
         &wordle.state.target_word
     ));
 
-    let guess_result = wordle.guess(&guess_word);
+    let guess_result = wordle.guess(guess_word);
 
     match guess_result {
         WordValidation::Valid(result, matches) => {

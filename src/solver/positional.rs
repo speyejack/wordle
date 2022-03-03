@@ -28,7 +28,7 @@ impl<'a> Solver<'a> for PositionalSolver<'a> {
             .iter()
             .map(|x| (x, score_word(x, &counts)))
             .reduce(|acc, item| if acc.1 > item.1 { acc } else { item })
-            .map(|x| x.0.to_string());
+            .map(|x| *x.0);
         word
     }
 

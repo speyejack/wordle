@@ -1,7 +1,7 @@
 use crate::logic::WordMatch;
 use std::fmt::Debug;
 
-pub type Guess = String;
+pub type Guess<'a> = &'a str;
 pub type SolverWordList<'a> = Vec<&'a str>;
 
 pub trait Solver<'a>

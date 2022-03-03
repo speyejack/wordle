@@ -96,7 +96,7 @@ impl<'a> Solver<'a> for EntropySolver<'a> {
                     current_guess
                 }
             })
-            .map(|x| x.0.to_string());
+            .map(|x| *x.0);
 
         guess
     }
@@ -154,7 +154,7 @@ impl<'a> Solver<'a> for GlobalShrinkingEntropySolver<'a> {
                     current_guess
                 }
             })
-            .map(|x| x.0.to_string());
+            .map(|x| *x.0);
 
         guess
     }
@@ -282,7 +282,7 @@ impl<'a> Solver<'a> for GlobalFilteredEntropySolver<'a> {
                     current_guess
                 }
             })
-            .map(|x| x.0.to_string());
+            .map(|x| *x.0);
 
         // println!("Guessed: {:?}", guess);
 
