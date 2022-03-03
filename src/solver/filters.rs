@@ -1,7 +1,7 @@
-use crate::logic::{CharAlignment, CharMatch};
+use crate::logic::{CharAlignment, WordMatch};
 
 pub trait FilterCriteria {
-    fn from_matches(matches: &[CharMatch]) -> Self;
+    fn from_matches(matches: &WordMatch) -> Self;
     fn check(&self, word: &str) -> bool;
 }
 
@@ -15,10 +15,10 @@ pub struct PosFilterCriteria {
 }
 
 impl FilterCriteria for PosFilterCriteria {
-    fn from_matches(matches: &[CharMatch]) -> Self {
+    fn from_matches(matches: &WordMatch) -> Self {
         let size = (5, 5);
         let pos = matches
-            .iter()
+            .char_matches()
             .map(|x| {
                 if let CharAlignment::Exact = x.align {
                     Some(x.c)
@@ -29,7 +29,7 @@ impl FilterCriteria for PosFilterCriteria {
             .collect();
 
         let nopos = matches
-            .iter()
+            .char_matches()
             .map(|x| match x.align {
                 CharAlignment::Misplaced | CharAlignment::NotFound => vec![x.c],
                 _ => vec![],
@@ -37,7 +37,7 @@ impl FilterCriteria for PosFilterCriteria {
             .collect();
 
         let inc: Vec<char> = matches
-            .iter()
+            .char_matches()
             .filter_map(|x| match x.align {
                 CharAlignment::NotFound => None,
                 _ => Some(x.c),
@@ -45,7 +45,7 @@ impl FilterCriteria for PosFilterCriteria {
             .collect();
 
         let exc = matches
-            .iter()
+            .char_matches()
             .filter_map(|x| match x.align {
                 CharAlignment::NotFound => {
                     if inc.contains(&x.c) {

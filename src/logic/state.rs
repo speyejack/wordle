@@ -2,10 +2,10 @@ use rand::prelude::ThreadRng;
 use std::time::Instant;
 
 use super::params::GameParameters;
-use super::types::StringMatch;
+use super::types::WordMatch;
 
 pub struct GameState {
-    pub prev_guesses: Vec<StringMatch>,
+    pub prev_guesses: Vec<WordMatch>,
     pub target_word: String,
     pub start_time: Option<Instant>,
     pub rng: ThreadRng,

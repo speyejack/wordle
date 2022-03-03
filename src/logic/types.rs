@@ -1,4 +1,9 @@
-pub type StringMatch = Vec<CharMatch>;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct WordMatch {
+	pub word: String,
+	pub aligns: Vec<CharAlignment>,
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum CharAlignment {
@@ -13,9 +18,12 @@ pub struct CharMatch {
     pub align: CharAlignment,
 }
 
-pub fn matches_str(smatch: &StringMatch, other: &str) -> bool {
-    smatch
-        .iter()
-        .zip(other.chars())
-        .all(|(cmatch, c)| c == cmatch.c)
+pub fn matches_str(smatch: &WordMatch, other: &str) -> bool {
+	smatch.word == other
+}
+
+impl WordMatch {
+	pub fn char_matches(&self) -> impl Iterator<Item=CharMatch> + '_ {
+		self.word.chars().zip(self.aligns.iter()).map(|(c, align)| CharMatch {c, align: *align})
+	}
 }
