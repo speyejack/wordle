@@ -131,7 +131,8 @@ impl<'a> Wordle<'a> {
 
         let mutator = &self.params.mutator;
 
-        matches.aligns
+        matches
+            .aligns
             .iter_mut()
             .for_each(|x| *x = mutator.mutate(*x, rng));
 
@@ -140,42 +141,36 @@ impl<'a> Wordle<'a> {
 }
 
 pub fn match_word(target: &str, guess: &str) -> WordMatch {
-
     let (mut target_used, mut matches): (Vec<bool>, Vec<_>) = target
         .chars()
         .zip(guess.chars())
         .map(|(tc, gc)| {
             if tc == gc {
-                (
-                    true,
-					CharAlignment::Exact,
-				)
-			} else {
-                (
-                    false,
-					CharAlignment::NotFound,
-				)
+                (true, CharAlignment::Exact)
+            } else {
+                (false, CharAlignment::NotFound)
             }
         })
         .unzip();
 
-	matches
-		.iter_mut()
-		.filter(|x| matches!(x, CharAlignment::NotFound))
-		.for_each(|x| {
-			for ((has_match, gc), tc) in target_used.iter_mut().zip(guess.chars()).zip(target.chars()).filter(|x| !*x.0.0) {
-				if gc == tc {
-					*has_match = true;
-					*x = CharAlignment::Misplaced;
-					break;
-				}
-			}
-		});
+    matches
+        .iter_mut()
+        .zip(guess.chars())
+        .filter(|x| matches!(x.0, CharAlignment::NotFound))
+        .for_each(|x| {
+            for (has_match, tc) in target_used.iter_mut().zip(target.chars()).filter(|x| !*x.0) {
+                if x.1 == tc {
+                    *has_match = true;
+                    *x.0 = CharAlignment::Misplaced;
+                    break;
+                }
+            }
+        });
 
-	WordMatch {
-		word: guess.to_string(),
-		aligns: matches,
-	}
+    WordMatch {
+        word: guess.to_string(),
+        aligns: matches,
+    }
 }
 
 impl Default for Wordle<'_> {
