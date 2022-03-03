@@ -9,7 +9,7 @@ use iced::Element;
 use iced::Length;
 use iced::Row;
 use iced::Text;
-use jordle::logic::types::StringMatch;
+use jordle::logic::types::WordMatch;
 
 pub struct Keyboard {
     rows: Vec<KeyboardRow>,
@@ -40,7 +40,7 @@ impl Keyboard {
         col.into()
     }
 
-    pub fn update(&mut self, c: &StringMatch) {
+    pub fn update(&mut self, c: &WordMatch) {
         for tc in c {
             for row in &mut self.rows {
                 if row.update(tc) {

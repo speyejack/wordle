@@ -75,8 +75,8 @@ fn main() {
     let command = Cli::parse();
     let rng = rand::thread_rng();
 
-    let params = create_simple_game_params();
-    // let params = GameParameters::default();
+    // let params = create_simple_game_params();
+    let params = GameParameters::default();
 
     let wordle = Wordle::new_random_game(params, rng);
     let solver = command.solver;
@@ -186,7 +186,7 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
     );
 }
 
-fn auto_game(wordle: &mut Wordle, solver: &mut WordleSolver) -> i32 {
+fn auto_game<'a>(wordle: &'a mut Wordle, solver: &mut WordleSolver<'a>) -> i32 {
     let mut guess_count = 0;
 
     loop {
@@ -201,7 +201,7 @@ fn auto_game(wordle: &mut Wordle, solver: &mut WordleSolver) -> i32 {
     guess_count
 }
 
-fn take_guess(wordle: &mut Wordle, solver: &mut WordleSolver) -> (bool, String) {
+fn take_guess<'a>(wordle: &'a mut Wordle, solver: &mut WordleSolver<'a>) -> (bool, String) {
     let guess_word = solver.guess().expect(&format!(
         "Failed to find guess with word {}",
         &wordle.state.target_word
@@ -214,6 +214,7 @@ fn take_guess(wordle: &mut Wordle, solver: &mut WordleSolver) -> (bool, String) 
             if let GuessResult::Correct = result {
                 return (false, guess_word);
             }
+
 
             solver.narrow_words(&matches);
 

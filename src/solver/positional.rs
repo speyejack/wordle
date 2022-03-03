@@ -1,6 +1,6 @@
 use super::filters::{FilterCriteria, PosFilterCriteria};
 use super::solvers::{Guess, Solver, SolverWordList};
-use crate::logic::CharMatch;
+use crate::logic::{CharMatch, WordMatch};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -32,8 +32,8 @@ impl<'a> Solver<'a> for PositionalSolver<'a> {
         word
     }
 
-    fn narrow_words(&mut self, guess_result: &[CharMatch]) {
-        let filter = PosFilterCriteria::from_matches(guess_result);
+    fn narrow_words(&mut self, guess_result: &WordMatch<'a>) {
+        let filter = PosFilterCriteria::from_word_match(&guess_result);
         let new_words: SolverWordList = self
             .wordlist
             .iter()
