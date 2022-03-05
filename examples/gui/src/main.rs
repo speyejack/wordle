@@ -189,7 +189,7 @@ impl Sandbox for WordleGui<'_> {
 
                 if let WordValidation::Valid(guess_result, matches) = result {
                     self.keyboard.update(&matches);
-                    let row = WordRow::new(matches);
+                    let row = WordRow::new(matches.char_matches().collect());
                     self.words.push(row);
 
                     if let GuessResult::Correct = guess_result {

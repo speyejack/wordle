@@ -9,6 +9,7 @@ use jordle::{
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
+use rand::Rng;
 
 type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver<'a> + 'a>;
 
@@ -73,17 +74,17 @@ fn create_simple_game_params() -> GameParameters<'static> {
 
 fn main() {
     let command = Cli::parse();
-    let rng = rand::thread_rng();
+    let mut rng = rand::thread_rng();
 
     let params = create_simple_game_params();
     // let params = GameParameters::default();
 
-    let wordle = Wordle::new_random_game(params, rng);
+    let wordle = Wordle::new_random_game(params, &mut rng);
     let solver = command.solver;
 
     match command.command {
         Commands::Trial {} => trial_solver(wordle, solver),
-        Commands::Sample { count } => repeat_auto_game(wordle, count, solver),
+        Commands::Sample { count } => repeat_auto_game(wordle, count, solver, &mut rng),
         Commands::Target { target } => run_auto_game(wordle, target, solver),
     }
 }
@@ -107,7 +108,12 @@ fn run_auto_game(mut wordle: Wordle, target: String, solver: SelectedSolver) {
     println!("Solved!")
 }
 
-fn repeat_auto_game(mut wordle: Wordle, played_games: usize, solver: SelectedSolver) {
+fn repeat_auto_game(
+    mut wordle: Wordle,
+    played_games: usize,
+    solver: SelectedSolver,
+    rng: &mut impl Rng,
+) {
     let mut guess_count = 0;
     let mut fail_count = 0;
     let words = wordle.params.answer_wordlist.clone();
@@ -121,11 +127,12 @@ fn repeat_auto_game(mut wordle: Wordle, played_games: usize, solver: SelectedSol
 
     for _ in 0..played_games {
         let guesses = auto_game(&mut wordle, &mut solver);
+        let guesses = guesses.len();
         guess_count += guesses;
         let failed = guesses > 6;
         fail_count += if failed { 1 } else { 0 };
 
-        wordle = wordle.restart();
+        wordle = wordle.restart(rng);
         solver.reload_wordlist(&words);
         bar.set_message(format!("Failed: {}", fail_count));
         bar.inc(1);
@@ -141,7 +148,7 @@ fn repeat_auto_game(mut wordle: Wordle, played_games: usize, solver: SelectedSol
 }
 
 fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
-    let mut guess_count = 0;
+    let mut total_guess_count = 0;
     let target_words: Vec<&str> = wordle.params.answer_wordlist.clone();
     let played_games = target_words.len() as u64;
     let bar = ProgressBar::new(played_games);
@@ -160,10 +167,12 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
         wordle = wordle.restart_with_target(target_word.to_string());
 
         let guesses = auto_game(&mut wordle, &mut solver);
-        guess_count += guesses;
-        let failed = guesses > 6;
+        let guess_count = guesses.len();
+        total_guess_count += guess_count;
+
+        let failed = guess_count > 6;
         if failed {
-            failed_words.push((guesses, target_word));
+            failed_words.push((guess_count, target_word));
         }
 
         solver.reload_wordlist(&guessing_words);
@@ -181,24 +190,24 @@ fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
     println!(
         "Played {} games, with {} avg and {} failures",
         played_games,
-        guess_count as f32 / played_games as f32,
+        total_guess_count as f32 / played_games as f32,
         failed_words.len()
     );
 }
 
-fn auto_game(wordle: &mut Wordle, solver: &mut WordleSolver) -> i32 {
-    let mut guess_count = 0;
+fn auto_game(wordle: &mut Wordle, solver: &mut WordleSolver) -> Vec<String> {
+    let mut guesses = Vec::new();
 
     loop {
-        guess_count += 1;
-        let (running, _) = take_guess(wordle, solver);
+        let (running, guess) = take_guess(wordle, solver);
+        guesses.push(guess);
 
         if !running {
             break;
         }
     }
 
-    guess_count
+    guesses
 }
 
 fn take_guess(wordle: &mut Wordle, solver: &mut WordleSolver) -> (bool, String) {
@@ -220,7 +229,7 @@ fn take_guess(wordle: &mut Wordle, solver: &mut WordleSolver) -> (bool, String) 
             return (true, guess_word);
         }
         WordValidation::Invalid(_, _) => {
-            println!("Guessed an invalid word: {}", &guess_word);
+            eprintln!("Guessed an invalid word: {}", &guess_word);
             unreachable!()
         }
     }

@@ -8,11 +8,11 @@ use owo_colors::colors::*;
 use owo_colors::OwoColorize;
 
 fn main() -> Result<()> {
-    let rng = rand::thread_rng();
+    let mut rng = rand::thread_rng();
 
     let params = GameParameters::default();
 
-    let wordle = Wordle::new_random_game(params, rng);
+    let wordle = Wordle::new_random_game(params, &mut rng);
     play_regular_game(wordle)
 }
 
@@ -40,7 +40,7 @@ fn play_regular_game(mut wordle: Wordle) -> Result<()> {
 
         match guess_result {
             WordValidation::Valid(guess, matches) => {
-                matches.iter().for_each(print_char);
+                matches.char_matches().for_each(print_char);
 
                 print!(" - ");
 
@@ -97,7 +97,7 @@ fn get_user_guess() -> Result<String> {
     Ok(guessed_word)
 }
 
-fn print_char(cmatch: &CharMatch) {
+fn print_char(cmatch: CharMatch) {
     let (c, calign) = (cmatch.c, &cmatch.align);
     match *calign {
         CharAlignment::Exact => print!("{}", c.fg::<Black>().bg::<Green>()),

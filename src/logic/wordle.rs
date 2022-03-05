@@ -3,7 +3,7 @@ use super::*;
 use super::{params::GameParameters, state::GameState};
 use rand::prelude::IteratorRandom;
 use rand::rngs::ThreadRng;
-use rand::thread_rng;
+use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 pub enum InvalidationReason {
@@ -37,15 +37,15 @@ pub struct Wordle<'a> {
 }
 
 impl<'a> Wordle<'a> {
-    pub fn new_random_game(params: GameParameters<'a>, mut rng: ThreadRng) -> Self {
+    pub fn new_random_game(params: GameParameters<'a>, rng: &mut impl Rng) -> Self {
         let target = params
             .answer_wordlist
             .iter()
-            .choose(&mut rng)
+            .choose(rng)
             .unwrap()
             .to_string();
 
-        Self::new_game(params, rng, target)
+        Self::new_game(params, target)
     }
 
     pub fn check_state(&self) -> GameEndTriggers {
@@ -73,32 +73,29 @@ impl<'a> Wordle<'a> {
         GameEndTriggers::StillPlaying
     }
 
-    pub fn new_game(params: GameParameters<'a>, rng: ThreadRng, target: String) -> Self {
+    pub fn new_game(params: GameParameters<'a>, target: String) -> Self {
         Self {
-            state: GameState::new_game(&params, rng, target),
+            state: GameState::new_game(&params, target),
             params,
         }
     }
 
-    pub fn restart(self) -> Self {
+    pub fn restart(self, rng: &mut impl Rng) -> Self {
         let params = self.params;
-        let rng = self.state.rng;
 
         Self::new_random_game(params, rng)
     }
 
     pub fn restart_with_target(self, target: String) -> Self {
         let params = self.params;
-        let rng = self.state.rng;
 
-        Self::new_game(params, rng, target)
+        Self::new_game(params, target)
     }
 
     pub fn guess(&mut self, guessed_word: &str) -> WordValidation {
         let words = &self.params.guess_wordlist;
         let target_word = self.state.target_word.as_str();
         let range = self.params.word_size;
-        let rng = &mut self.state.rng;
 
         if guessed_word.len() < range.0 || guessed_word.len() > range.1 {
             return WordValidation::Invalid(
@@ -129,12 +126,12 @@ impl<'a> Wordle<'a> {
             return WordValidation::Valid(GuessResult::Correct, matches);
         }
 
-        let mutator = &self.params.mutator;
+        let mutator = &mut self.params.mutator;
 
         matches
             .aligns
             .iter_mut()
-            .for_each(|x| *x = mutator.mutate(*x, rng));
+            .for_each(|x| *x = mutator.mutate(*x));
 
         WordValidation::Valid(GuessResult::Wrong, matches)
     }
@@ -175,9 +172,9 @@ pub fn match_word(target: &str, guess: &str) -> WordMatch {
 
 impl Default for Wordle<'_> {
     fn default() -> Self {
-        let rng = thread_rng();
+        let mut rng = thread_rng();
         let params = GameParameters::default();
 
-        Self::new_random_game(params, rng)
+        Self::new_random_game(params, &mut rng)
     }
 }

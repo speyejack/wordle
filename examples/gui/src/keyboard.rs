@@ -41,9 +41,9 @@ impl Keyboard {
     }
 
     pub fn update(&mut self, c: &WordMatch) {
-        for tc in c {
+        for tc in c.char_matches() {
             for row in &mut self.rows {
-                if row.update(tc) {
+                if row.update(&tc) {
                     break;
                 }
             }
