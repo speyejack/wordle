@@ -1,4 +1,4 @@
-use super::types::{matches_str, WordMatch};
+use super::types::WordMatch;
 use super::*;
 use super::{params::GameParameters, state::GameState};
 use rand::prelude::IteratorRandom;
@@ -114,7 +114,7 @@ impl<'a> Wordle<'a> {
             .state
             .prev_guesses
             .iter()
-            .any(|old_matches| matches_str(old_matches, guessed_word))
+            .any(|old_matches| old_matches.word == guessed_word)
         {
             return WordValidation::Invalid(
                 InvalidationReason::RepeatWord,
