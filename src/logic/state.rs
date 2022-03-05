@@ -1,4 +1,3 @@
-use rand::prelude::ThreadRng;
 use std::time::Instant;
 
 use super::params::GameParameters;

@@ -2,7 +2,6 @@ use super::types::WordMatch;
 use super::*;
 use super::{params::GameParameters, state::GameState};
 use rand::prelude::IteratorRandom;
-use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
