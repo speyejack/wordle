@@ -3,17 +3,18 @@ use std::time::Duration;
 
 use super::mutator::{Mutator, NoopMutator};
 
-pub struct GameParameters<'a> {
+pub struct GameParameters<'a, M>
+where M: Mutator {
     pub guess_wordlist: HashSet<&'a str>,
     pub answer_wordlist: Vec<&'a str>,
     pub word_size: (usize, usize),
 
-    pub mutator: Box<dyn Mutator>,
+    pub mutator: M,
     pub tries: Option<usize>,
     pub time_limit: Option<Duration>,
 }
 
-impl Default for GameParameters<'static> {
+impl Default for GameParameters<'static, NoopMutator> {
     fn default() -> Self {
         let word_size = (5, 5);
         let filter_words =
@@ -35,7 +36,7 @@ impl Default for GameParameters<'static> {
             answer_wordlist,
             word_size,
 
-            mutator: Box::new(NoopMutator {}),
+            mutator: NoopMutator{},
             tries: Some(6),
             time_limit: None,
         }

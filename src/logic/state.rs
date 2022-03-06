@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use super::mutator::Mutator;
 use super::params::GameParameters;
 use super::types::WordMatch;
 
@@ -10,7 +11,7 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new_game(params: &GameParameters, target: String) -> Self {
+    pub fn new_game<T: Mutator>(params: &GameParameters<T>, target: String) -> Self {
         Self {
             prev_guesses: Vec::new(),
             target_word: target,

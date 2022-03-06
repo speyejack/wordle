@@ -1,3 +1,4 @@
+use super::mutator::{Mutator, NoopMutator};
 use super::types::WordMatch;
 use super::*;
 use super::{params::GameParameters, state::GameState};
@@ -30,13 +31,13 @@ pub enum GameEndTriggers {
     StillPlaying,
 }
 
-pub struct Wordle<'a> {
-    pub params: GameParameters<'a>,
+pub struct Wordle<'a, M: Mutator> {
+    pub params: GameParameters<'a, M>,
     pub state: GameState,
 }
 
-impl<'a> Wordle<'a> {
-    pub fn new_random_game(params: GameParameters<'a>, rng: &mut impl Rng) -> Self {
+impl<'a, M: Mutator> Wordle<'a, M> {
+    pub fn new_random_game(params: GameParameters<'a, M>, rng: &mut impl Rng) -> Self {
         let target = params
             .answer_wordlist
             .iter()
@@ -72,7 +73,7 @@ impl<'a> Wordle<'a> {
         GameEndTriggers::StillPlaying
     }
 
-    pub fn new_game(params: GameParameters<'a>, target: String) -> Self {
+    pub fn new_game(params: GameParameters<'a, M>, target: String) -> Self {
         Self {
             state: GameState::new_game(&params, target),
             params,
@@ -169,7 +170,7 @@ pub fn match_word(target: &str, guess: &str) -> WordMatch {
     }
 }
 
-impl Default for Wordle<'_> {
+impl Default for Wordle<'_, NoopMutator> {
     fn default() -> Self {
         let mut rng = thread_rng();
         let params = GameParameters::default();

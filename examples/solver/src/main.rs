@@ -12,6 +12,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rand::{prelude::IteratorRandom, Rng};
 
 type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver<'a> + 'a>;
+type Wordle<'a> = jordle::logic::Wordle<'a, NoopMutator>;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -48,7 +49,7 @@ impl<'a> SelectedSolver {
     }
 }
 
-fn create_simple_game_params() -> GameParameters<'static> {
+fn create_simple_game_params() -> GameParameters<'static, NoopMutator> {
     let word_size = (5, 5);
     let filter_words =
         |x: &'static str| Some(x).filter(|x| x.len() >= word_size.0 && x.len() <= word_size.1);
@@ -66,7 +67,7 @@ fn create_simple_game_params() -> GameParameters<'static> {
         answer_wordlist,
         word_size,
 
-        mutator: Box::new(NoopMutator {}),
+        mutator: NoopMutator {},
         tries: Some(6),
         time_limit: None,
     }
