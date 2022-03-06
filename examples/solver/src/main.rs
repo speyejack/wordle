@@ -11,7 +11,6 @@ use jordle::{
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::{prelude::IteratorRandom, Rng};
 
-type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver<'a> + 'a>;
 type Wordle<'a> = jordle::logic::Wordle<'a, NoopMutator>;
 
 #[derive(Parser)]
@@ -90,15 +89,26 @@ fn main() {
     }
 }
 
-fn run_auto_game(mut wordle: Wordle, target: String, solver: SelectedSolver) {
+fn run_auto_game(mut wordle: Wordle, target: String, solver_type: SelectedSolver) {
     println!("Searching for word: {}", &target);
     wordle.state.target_word = target;
 
-    let game_words: SolverWordList = wordle.params.answer_wordlist.iter().map(|x| *x).collect();
+    let guessing_words: SolverWordList = wordle.params.answer_wordlist.iter().map(|x| *x).collect();
 
-    let mut solver: WordleSolver = solver.create_solver(&game_words);
-
-    let guesses = auto_game(&mut wordle, &mut solver);
+    let guesses = match solver_type {
+        SelectedSolver::Positional => {
+            auto_game(&mut wordle, &mut PositionalSolver::new(&guessing_words))
+        }
+        SelectedSolver::Entropy => auto_game(&mut wordle, &mut EntropySolver::new(&guessing_words)),
+        SelectedSolver::FilteredEntropy => auto_game(
+            &mut wordle,
+            &mut GlobalFilteredEntropySolver::new(&guessing_words),
+        ),
+        SelectedSolver::ShrinkingEntropy => auto_game(
+            &mut wordle,
+            &mut GlobalShrinkingEntropySolver::new(&guessing_words),
+        ),
+    };
 
     println!("Guessed:\n");
     for guess in guesses {
@@ -118,14 +128,14 @@ fn repeat_auto_game(
 
     let target_words = (0..played_games).map(|_| *answer_wordlist.iter().choose(rng).unwrap());
 
-    solve_iter(wordle, solver, target_words, played_games);
+    run_solver(wordle, solver, target_words, played_games);
 }
 
 fn trial_solver(wordle: Wordle, solver: SelectedSolver) {
     let target_words: Vec<&str> = wordle.params.answer_wordlist.clone();
     let target_len = target_words.len();
 
-    solve_iter(wordle, solver, target_words.into_iter(), target_len);
+    run_solver(wordle, solver, target_words.into_iter(), target_len);
 }
 
 fn progress_bar(count: u64) -> ProgressBar {
@@ -138,9 +148,44 @@ fn progress_bar(count: u64) -> ProgressBar {
     bar
 }
 
+fn run_solver<'a>(
+    mut wordle: Wordle<'a>,
+    solver_type: SelectedSolver,
+    target_words: impl Iterator<Item = &'a str>,
+    target_count: usize,
+) {
+    let guessing_words = wordle.params.answer_wordlist.clone();
+    match solver_type {
+        SelectedSolver::Positional => solve_iter(
+            wordle,
+            PositionalSolver::new(&guessing_words),
+            target_words,
+            target_count,
+        ),
+        SelectedSolver::Entropy => solve_iter(
+            wordle,
+            EntropySolver::new(&guessing_words),
+            target_words,
+            target_count,
+        ),
+        SelectedSolver::FilteredEntropy => solve_iter(
+            wordle,
+            GlobalFilteredEntropySolver::new(&guessing_words),
+            target_words,
+            target_count,
+        ),
+        SelectedSolver::ShrinkingEntropy => solve_iter(
+            wordle,
+            GlobalShrinkingEntropySolver::new(&guessing_words),
+            target_words,
+            target_count,
+        ),
+    }
+}
+
 fn solve_iter<'a>(
-    mut wordle: Wordle,
-    solver: SelectedSolver,
+    mut wordle: Wordle<'a>,
+    mut solver: impl Solver<'a>,
     target_words: impl Iterator<Item = &'a str>,
     target_count: usize,
 ) {
@@ -148,7 +193,6 @@ fn solve_iter<'a>(
     let played_games = target_count;
 
     let guessing_words = wordle.params.answer_wordlist.clone();
-    let mut solver = solver.create_solver(&guessing_words);
     let mut failed_words = Vec::new();
     let bar = progress_bar(target_count as u64);
 
@@ -186,7 +230,7 @@ fn solve_iter<'a>(
     );
 }
 
-fn auto_game(wordle: &mut Wordle, solver: &mut WordleSolver) -> Vec<String> {
+fn auto_game<'a>(wordle: &mut Wordle, solver: &mut impl Solver<'a>) -> Vec<String> {
     let mut guesses = Vec::new();
 
     loop {
@@ -201,7 +245,7 @@ fn auto_game(wordle: &mut Wordle, solver: &mut WordleSolver) -> Vec<String> {
     guesses
 }
 
-fn take_guess(wordle: &mut Wordle, solver: &mut WordleSolver) -> (bool, String) {
+fn take_guess<'a>(wordle: &mut Wordle, solver: &mut impl Solver<'a>) -> (bool, String) {
     let guess_word = solver.guess().expect(&format!(
         "Failed to find guess with word {}",
         &wordle.state.target_word
