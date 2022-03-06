@@ -146,11 +146,11 @@ fn solve_iter<'a>(
 ) {
     let mut total_guess_count = 0;
     let played_games = target_count;
-    let bar = progress_bar(target_count as u64);
 
     let guessing_words = wordle.params.answer_wordlist.clone();
     let mut solver = solver.create_solver(&guessing_words);
     let mut failed_words = Vec::new();
+    let bar = progress_bar(target_count as u64);
 
     println!("Game loaded, beginning trial");
 
