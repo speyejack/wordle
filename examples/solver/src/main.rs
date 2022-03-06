@@ -9,7 +9,7 @@ use jordle::{
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
-use rand::Rng;
+use rand::{prelude::IteratorRandom, Rng};
 
 type WordleSolver<'a> = Box<dyn jordle::solver::solvers::Solver<'a> + 'a>;
 
@@ -76,8 +76,8 @@ fn main() {
     let command = Cli::parse();
     let mut rng = rand::thread_rng();
 
-    let params = create_simple_game_params();
-    // let params = GameParameters::default();
+    // let params = create_simple_game_params();
+    let params = GameParameters::default();
 
     let wordle = Wordle::new_random_game(params, &mut rng);
     let solver = command.solver;
@@ -90,72 +90,62 @@ fn main() {
 }
 
 fn run_auto_game(mut wordle: Wordle, target: String, solver: SelectedSolver) {
-    println!("Searching for word: {}\n", &target);
+    println!("Searching for word: {}", &target);
     wordle.state.target_word = target;
 
     let game_words: SolverWordList = wordle.params.answer_wordlist.iter().map(|x| *x).collect();
 
     let mut solver: WordleSolver = solver.create_solver(&game_words);
 
-    loop {
-        let (running, word) = take_guess(&mut wordle, &mut solver);
-        println!("Guessed: {}", word);
-        if !running {
-            break;
-        }
+    let guesses = auto_game(&mut wordle, &mut solver);
+
+    println!("Guessed:\n");
+    for guess in guesses {
+        println!("{}", guess)
     }
 
-    println!("Solved!")
+    println!("\nSolved!")
 }
 
 fn repeat_auto_game(
-    mut wordle: Wordle,
+    wordle: Wordle,
     played_games: usize,
     solver: SelectedSolver,
     rng: &mut impl Rng,
 ) {
-    let mut guess_count = 0;
-    let mut fail_count = 0;
-    let words = wordle.params.answer_wordlist.clone();
-    let mut solver = solver.create_solver(&words);
+    let answer_wordlist: Vec<&str> = wordle.params.answer_wordlist.clone();
 
-    let bar = ProgressBar::new(played_games.try_into().unwrap());
-    bar.set_style(
-        ProgressStyle::default_bar()
-            .template("[{elapsed_precise}/{eta_precise}] {bar:cyan/blue} {pos:>7}/{len:7} {msg}"),
-    );
+    let target_words = (0..played_games).map(|_| *answer_wordlist.iter().choose(rng).unwrap());
 
-    for _ in 0..played_games {
-        let guesses = auto_game(&mut wordle, &mut solver);
-        let guesses = guesses.len();
-        guess_count += guesses;
-        let failed = guesses > 6;
-        fail_count += if failed { 1 } else { 0 };
-
-        wordle = wordle.restart(rng);
-        solver.reload_wordlist(&words);
-        bar.set_message(format!("Failed: {}", fail_count));
-        bar.inc(1);
-    }
-    bar.finish();
-
-    println!(
-        "Played {} games, with {} avg and {} failures",
-        played_games,
-        guess_count as f32 / played_games as f32,
-        fail_count
-    );
+    solve_iter(wordle, solver, target_words, played_games);
 }
 
-fn trial_solver(mut wordle: Wordle, solver: SelectedSolver) {
-    let mut total_guess_count = 0;
+fn trial_solver(wordle: Wordle, solver: SelectedSolver) {
     let target_words: Vec<&str> = wordle.params.answer_wordlist.clone();
-    let played_games = target_words.len() as u64;
-    let bar = ProgressBar::new(played_games);
+    let target_len = target_words.len();
+
+    solve_iter(wordle, solver, target_words.into_iter(), target_len);
+}
+
+fn progress_bar(count: u64) -> ProgressBar {
+    let bar = ProgressBar::new(count);
 
     bar.set_style(ProgressStyle::default_bar().template(
         "[{elapsed_precise}/{eta_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}",
     ));
+
+    bar
+}
+
+fn solve_iter<'a>(
+    mut wordle: Wordle,
+    solver: SelectedSolver,
+    target_words: impl Iterator<Item = &'a str>,
+    target_count: usize,
+) {
+    let mut total_guess_count = 0;
+    let played_games = target_count;
+    let bar = progress_bar(target_count as u64);
 
     let guessing_words = wordle.params.answer_wordlist.clone();
     let mut solver = solver.create_solver(&guessing_words);
